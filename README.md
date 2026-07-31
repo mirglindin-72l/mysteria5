@@ -15,6 +15,11 @@ the package.sh script can be used to package only necessary things.
 since it uses critcl, aforementioned libraries have to be installed for it to work under
 MacOS or Linux. an I2P router has to be running with SAM enabled.
 
+for Windows, if you don't use critcl cache blobs from the repo, a compiler has to be
+installed and in path to build new critcl cache dlls. similarly to that dll blobs of used
+libraries from the repo can be replaced with ones locally built, but that's not described
+here.
+
 ## using it
 
 you need to add some other peers by I2P destinations. extended mode of the main window
@@ -28,3 +33,17 @@ there's mail, chat, versioned documents and almost nonexistent voice calls.
 
 there's rudimentary file exchange (functional enough to be used for exchanging files)
 and PNG images support (for letters or chat messages with inline display).
+
+the update ("@") button refers to announcing ourselves on the DHT (not needed generally),
+the gather button - to requesting group and contact sync with peers.
+
+group details ("?" button) can be used to, if we are group owner, post control rules.
+control rules define membership and who can write to group.
+
+versioned documents are in a very basic stage.
+
+## on quality
+
+this is a very personal project, terribly clumsy and emotionally important.
+there's plenty of unused code, bad code, commented out and left in place code, duplicate code
+and code clearly outrageous for anyone who worked as a programmer. sorry.
