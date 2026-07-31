@@ -1,0 +1,547 @@
+[comment {-*- mode: tcl ;fill-column: 90 -*- doctools manpage}]
+[vset VERSION 0.17.0]
+[manpage_begin tmdoc n [vset VERSION]]
+[copyright {2020-2025, Detlef Groth <dgroth(at)uni(minus)potsdam(dot)de>}]
+[moddesc   {Literate programming using Tcl/Tk and various command line tools} ]
+[titledesc {Evaluate embedded R, Python, Julia, Octave and Tcl code or other command line tool input in Markdown, Typst, AsciiDoc or LaTeX documents}]
+[category  {Text processing}]
+[require Tcl 8.6-]
+[require textutil]
+[require yaml]
+[require fileutil]
+[require cmdline]
+[description]
+
+The package [package tmdoc] provides a command to evaluate embedded R, Python, Julia, Octave, Tcl and
+Shell code in code chunks within documents of Markup languages like Markdown,
+AsciiDoc, Typst or LaTeX and add the resulting output to the document for creating dynamic
+documents, a technique as well known as literate programming. Further it can
+use the kroki.io webservice to embed diagrams for this web service if diagram
+tools like GraphViz or PlantUML are not installed locally. Since version
+0.10.0 as well code written in various programming languages can be embedded,
+compiled and executed making [package tmdoc] an useful utility to write
+programming tutorials. Further since version 0.12.0 LaTeX equations and
+Youtube videos can be embedded and since version 0.13.0 there is as well
+support for defining abbreviations in YAML files or in the YAML header,
+[uri https://github.com/orgs/community/discussions/16925 {Markdown alerts}] and embedding tables as CSV code.
+
+Conversion of the created Markdown documents can be done by using Tcllib's [package Markdown] package.
+
+[section "R code Embedding"]
+
+The embedded R code starts with three backticks and a language marker like this:
+
+[example {
+```{r}
+print("Hello World")
+```
+}]
+
+Shorter R code fragments can be embedded directly within the text using
+single backticks like this:
+
+[example {
+This document was generated at \\
+    `r Sys.Date()` MET.
+}]
+
+Similarly code for the Programming languages Python, Octave and Julia can be embedded. 
+The chunk markers for these languages are py, oc and jl. 
+
+[section "Tcl code Embedding"]
+
+The embedded Tcl code starts with three backticks and a language marker like this:
+
+[example {
+```{.tcl}
+puts "Hello World"
+```
+}]
+
+Shorter Tcl code fragments can be embedded directly within the text using
+single backticks like this:
+
+[example {
+This document was generated at \\
+    `tcl clock format [clock seconds] -format "%Y-%m-%d %H:%m"` MET.
+}]
+
+[section "Shell Code Embedding"]
+
+The embedded Shell code chunks start as well with three backticks then the [arg .shell] indicator and 
+a [arg cmd] code chunk argument which explains how to process the input in the code chunk like this:
+
+[example {
+```{.shell cmd="dot -Tpng %i -o%o"}
+digraph g {
+  A -> B
+}
+```
+}]
+
+The arguments [arg %i] are used as placeholder for the input file name, which
+contains the text in the code chunk and [arg %o] for the output filename,
+usually a PNG or SVG file. Further [arg %b] can be used as placeholder for
+the basename of the inputfile, so the input filename without the file extension.
+If the text from the previous code chunk just needs
+to be reused again in the next one, you can use the string 'LASTFILE' as a
+place holder.
+
+[section "Embedding Programming Languages"]
+
+Programming code can be as well executed, even programming languages requiring
+an compilation step can be embedded. Here is an example for the Python
+programming language:
+
+[example {
+```{.shell cmd="python3 %i > %o" chunk.ext=py ext=txt}
+print("Hello Python World!")
+```
+}]
+
+And here an example on how to display the output of a C program:
+
+[example {
+```{.shell cmd="gcc %i -o hello&&./hello > %o" chunk.ext=c ext=txt}
+#include <stdio.h>
+int main() {
+    printf("Hello C World!\n");
+    return(0);
+}
+```
+}]
+
+Please note, that the compilation step is separated by the execution step
+using the _&&_ and operator of the Bash shell.
+
+[section "Embedding Diagram Code Using Kroki Webservice"]
+
+Embedded diagram chunks using the [uri https://kroki.io kroki.io] web service are done like this:
+
+[example {
+```{.kroki dia=graphviz ext=png}
+digraph g {
+  A -> B
+}
+```
+}]
+
+Other file extensions are svg and pdf. Other diagram tools are plantuml, ditaa
+and many others. For details look at the kroki.io website.
+
+Since version 0.14.2 first local availability of the GraphViz dot, the plantuml and the ditaa command line applications are checked before the webservise is used.
+
+
+[section "LaTeX Equations"]
+
+Since version 0.12.0 there is as well support for embedding LaTeX equations as SVG images using the 
+[uri https://math.vercel.app math.vercel.app] webservice. The equations are hashed as CRC32 hashes and then downloaded 
+if [cmd wget] is installed to avoid refetching the images again and again. if [cmd wget] is not
+available just the link to math.vercel.app image is embedded. Here an example:
+
+[example {
+```{.mtex echo=false}
+E = mc^2
+```
+}]
+
+[section "CSV Tables"]
+
+Since version 0.13.0 there is as well support for embedding CSV data within code chunks and 
+displaying them as Markdown tables. Here an example:
+
+[example {
+```{.csv echo=false results=asis}
+col1,col2,col3
+1,2,3
+4,5,6
+7,8,9
+```
+}]
+
+
+[section "Abbreviations"]
+
+Since version 0.13.0 there is as well support for embedding abbreviations either in the YAML header of the document
+or in an external file which must be then referenced in the YAML header like this:
+
+[example {
+---
+abbreviations: abbrev.yml
+DG: Detlef Groth, University of Potsdam, Germany
+---
+
+Inside the of the text the abbreviations can be then expanded using
+curly braces like here: This text was written by {DG}!
+
+
+Here an abbreviation which will be expanded based on the YAML data in abbrev.yml.
+
+{lipsum}
+}]
+
+For Markup languages which do not support Yaml headers like Typst or AsciiDoc
+the Yaml file which should be used for  abbreviations since version 0.15.0 can be as well given on
+the command line of the tmdoc application:
+
+[example {
+tmdoc file.ttyp file.typ --abbrev abbrev.yml
+tpyst compile file.typ
+}]
+
+The Tcl procedure [cmd tmdoc::tmdoc]  for this  purpose  has the 
+[arg "-abbrev filename.yml"] argument.
+
+[section "Markdown Alerts"]
+
+Since version 0.13.0 there is as well support for adding [uri https://github.com/orgs/community/discussions/16925 {Markdown alerts}]. 
+These alerts are only visible as such by styline the style sheet acordingly. 
+Please have a look at the file [cmd tmdoc.css] for the styling of the alerts which
+can be seen in the tutorial. Here an example:
+
+[example {
+
+> [!NOTE]
+> This is a note.
+
+
+> [!WARNING]
+> This is a warning!!
+}]
+
+[section Functions]
+
+[list_begin definitions]
+
+[call [cmd ::tmdoc::main] [arg argv]]
+
+The main entry point for applications. The [arg argv] vector is usually the
+argument vector given on the command line. It is used by the tmdoc command
+line application but could be used as well by other programming languages liem
+Python or R which can with an installed Tcl interpreter.
+
+[call [cmd  ::tmdoc::tmdoc]  [arg infile] [arg  outfile] \
+    [opt "[option  -mode] [arg weave|tangle] \
+        [option -abbrev] [arg abbrevfile] \
+        [option -toc] [arg false|true]"]]
+
+The command reads the [arg input] file, evaluates embedded Tcl code in code chunks and writes
+the resulting output to the [arg output] file if such is given or to stdout if [arg output] is missing,
+this is the default mode [arg weave]. 
+
+[para] If as [option -mode] [arg tangle] is given, the Tcl code in
+code chunks is extracted but not evaluated.
+
+[para] If as [option -abbrev] [arg FILENAME] is given, the given [arg abbrevfile] argument
+should be a YAML file containing abbreviations which can be used within the given [arg infile].
+
+[para] If as [option -toc] [arg false|true] is given and set to [arg true],
+there will be a file [arg "file rootname  .toc"]  generated  which  contains a
+list with links to all section 2 and 3 headers which can be embedded using the
+[cmd include] function of tmdoc.
+
+[para] All arguments are paths to the files to read from or write to.
+
+[para] The result of the command is the empty string.
+
+[para] See section [sectref "Code Chunk Options"] for the supported code chunk options.
+
+[para][example {
+package require tmdoc
+namespace import tmdoc::tmdoc
+tmdoc tmdoc-example.tmd tmdoc-example.md
+tmdoc tmdoc-example.tmd tmdoc-example.tcl -mode tangle
+tmdoc example.ttyp example.typ --abbrev abbrev..yml
+typst compile example.typ
+}]
+
+[call [cmd ::tmdoc::tmeval] [arg text] [opt [arg "?ext md?"]]]
+
+[para] The command evaluates the given [arg text] as code chunk and returns the resulting output.
+Note, that the interpreter is reset after each call, so variable declared in previous calls will not exists in calls thereafter. 
+
+[para] The given file extension gives the operation mode, so the default [arg md] assumes that Markdown output is requested, 
+in case of [arg tdoc] AsciiDoc compatible markup and in case of [arg ttyp] Typst compatible markup  will be returned,.
+
+
+[para][example {
+tmdoc::tmeval "
+Short code chunk follows:
+
+```{.tcl}
+set x 2
+set x
+```
+"
+}]
+
+[para] [emph "This function is mainly used for testing the package and usually not useful in other situations."]
+
+[list_end]
+
+
+[section "Code Chunk Options"]
+
+The package supports the following code chunk options.
+
+[list_begin definitions]
+[def [const echo]] Should the Tcl code itself been show. Defaults to [const true].
+[def [const eval]] Should the code chunk be evaluated. Defaults to [const true].
+[def [const fig]] Should a custom figure function called with the chunk label as argument. Defaults to [const false].
+[def [const fig.width]] The figure width of the image, if not set, the figure width is choosen automatically.
+[def [const include]] Should a possible figure been included directly after the code chunk. Defaults to [const true].
+[def [const label]] A text label for the code chunk. Defaults to [const chunk-nn] where nn is a counter.
+[def [const results]] Should the results of code evaluation been show, either [const show], [const hide] or [const asis], the latter does include the ouptput not into a pre / verbatim environment. Defaults to [const show].
+[list_end]
+
+The following example will just do an computation using the Tcl interpreter but does not show the output due to [const results=hide] and not the code due to [const echo=false]:
+
+[para] [example {
+
+```{.tcl echo=false results=hide}
+set date [clock format [clock seconds]]
+```
+}]
+
+[section "Inline code chunks"]
+
+[para] Short Tcl codes can be as well evaluated within the standard text flow using single backticks. For instance:
+
+[para][example {
+
+The current date is  \\
+  `tcl clock format [clock seconds] -format "%Y-%m-%d"`
+
+}]
+
+The code above would insert the current date into the text. 
+So text inline code chunks are possible using single backticks such as here [const "`tcl set x`"].
+
+[section Tables]
+
+[para] The Tcl interpreter which is executed inside the code chunks supports as well a procedure [cmd list2mdtab] [const headers] [const data] which allows of inserting tables if the output is Markdown.
+
+[para] [example {
+```{.tcl results="asis"}
+set l [list [list A B C D E] \\
+   [list 1 2 3 4 5] \\
+   [list 6 7 8 9 10] \\
+   [list 11 12 13 14 15]]
+# syntax: list2mdtab header rows
+# we need to flatten the row list
+set r <center>\n\n
+append r [list2mdtab [lindex $l 0] [concat {*}[lrange $l 1 end]]]
+append r \n\n</center>\n
+```
+}]
+
+[section Images]
+
+[para] Inside standard code chunks as well images with Tcl can be generated with normal Tcl code.
+
+[para] To support the standard chunk properties [const fig=true], optionally with [const include=false] however a Tcl procedure [cmd figure] must be provided. Below is an example to use the tklib package [const canvas::snap] to create images using the Tk canvas.
+
+[para] [example {
+```{.tcl}
+package require Tk
+package require canvas::snap
+pack [canvas .c -background beige] \\
+   -padx 5 -pady 5 -side top -fill both -expand yes
+proc figure {outfile} {
+    set img [canvas::snap .c]
+    $img write $outfile -format png
+}
+```
+}]
+
+[para] After preparing the canvas and the figure procedure the canvas can be used for 
+making images like in the example below:
+
+[para][example { 
+```{.tcl fig=true results=hide}
+.c create rectangle 60 60 90 90  -fill blue
+```
+}]
+
+[para] The code above will create a canvas figure and embeds it automatically. 
+
+[para] If you need more control on the figure placement you can 
+use the option [const include=false].
+
+[para] [example {
+```{.tcl label=mfig fig=true results=hide include=false}
+.c create rectangle 65 65 85 85  -fill blue
+```
+}]
+
+[para]You can now manually place the figure. The filename of the figure will
+be automatically created, it is the basename of the tmd-file  and the label.
+So in principle: `basename-label.png`. You can embed the figure using Markdown 
+figure markup such as:
+
+[para][example {
+
+![](basename-label.png)
+
+}]
+
+[section Includes]
+
+[para] [cmd tmdoc] supports as well the inclusion of other files into the
+output document, the Tcl interpreter running into your source code chunks has
+an [cmd include] [const FILENAME] feature which allows you to insert Markdown or LaTeX
+code directly within your document.
+
+[para] [example {
+
+`include filename.md`
+
+}]
+
+[section "Command Line Applications"]
+
+Since Version 0.8.0 [cmd tmdoc] as well supports the inclusion of code for
+tools that can create graphics from the given input such like GraphViz 
+[cmd dot] or [cmd plantuml]. These code chunks have a `.cmd` chunk indication and need to
+provide as well a cmd chunk option which indicates the required command line to process the input.
+
+The following code chunk options are available.
+
+[list_begin definitions]
+[def [const cmd]] The command line to process the given code chunk input. There are placeholders for the input filename "%i" and the output filename "%o" available.
+[def [const echo]] Should the code input be shown. Defaults to [const true].
+[def [const eval]] Should the code chunk be evaluated. Defaults to [const true].
+[def [const fig]] Should a custom figure function called with the chunk label as argument. Defaults to [const true].
+[def [const fig.width]] Suggested figure width. Defaults to 0 (automatic mode).
+[def [const include]] Should a possible figure been included directly after the code chunk. Defaults to [const true].
+[def [const label]] A text label for the code chunk. Defaults to [const chunk-nn] where nn is a counter.
+[def [const results]] Should the results of code evaluation been show, either [const show], [const hide] or [const asis], the latter does include the ouptput not into a pre / verbatim environment. Defaults to [const show].
+[list_end]
+
+[para] [example {
+
+```{.cmd cmd="dot -Tpng -o%o %i" echo=false results=hide}
+digraph g {
+    A -> B
+}
+```
+}]
+
+[para] Using the LASTFILE content of a code chunk the last text of a previous
+code chunk can be reused. This LASTFILE string can reused several times, here an example which should produce the same image as before just with filled boxes as the [const cmd] code chunk option was changed.
+
+[para] [example {
+
+```{.cmd cmd="dot -Tpng -Nstyle=filled -o%o %i" echo=false results=hide}
+LASTFILE
+```
+
+}]
+
+[section "Kroki Webservice"]
+
+Since Version 0.9.0 [cmd tmdoc] as well supports the inclusion of code for
+diagram tools provided by the [uri https://kroki.io kroki.io] websevices so
+that you do not need tools like GraphViz 
+[cmd dot] or [cmd plantuml] to be installed locally. Instead in case of an existing internet connection you can fetch images for these tools
+and many others from the webservice.
+
+The following code chunk options are available.
+
+[list_begin definitions]
+[def [const dia]] The diagram type, the most common options are graphviz, plantuml, diataa or pkchr, default: ditaa
+[def [const echo]] Should the code input be shown. Defaults to [const true].
+[def [const eval]] Should the code chunk be evaluated. Defaults to [const true].
+[def [const fig]] Should a custom figure function called with the chunk label as argument. Defaults to [const true].
+[def [const fig.path]] the path where the images should be stored, the images are usually downloaded from the webservice locally, default: . (cuurent directory)
+[def [const include]] Should a possible figure be included directly after the code chunk. Defaults to [const true].
+[def [const label]] A text label for the code chunk. Defaults to [const chunk-nn] where nn is a counter.
+[def [const results]] Should the results of code evaluation been show, either [const show], [const hide] or [const asis], the latter does include the ouptput not into a pre / verbatim environment. Defaults to [const show].
+[list_end]
+
+[para] [example {
+
+```{.kroki dia=graphviz ext=png echo=false results=hide}
+digraph g {
+    A -> B
+}
+```
+}]
+
+[section Examples]
+
+[para] Here is such an example which will be executed by the Tcl interpreter
+
+[example {
+
+The code chunk below will be executed:
+
+```{.tcl}
+set x 1
+expr {$x*2}
+```
+
+Some more Markup text ...
+
+}]
+
+[section Filetypes] 
+
+[para] Currently [cmd tmdoc] supports the filetypes Markdown which is assumed
+if you are using the file extension [file .tmd], 
+AsciiDoc if you use the [file .tdoc] extension
+and LaTeX if you use the file extensions [file .tnw].
+
+[section "See Also"]
+
+[para] For a detailed tutorial on how to do literate programming with Tcl have a look at the [uri tmdoc-tutorial.html tmdoc-tutorial].
+
+[list_begin itemized]
+
+
+[item] [uri tmdoc-tutorial.html tmdoc-tutorial]
+
+[item] [uri ../apps/tmdoc.html tmdoc-application]
+
+[list_end]
+
+
+[section "Bugs, Ideas, Feedback"]
+
+This document, and the package it describes, will undoubtedly contain bugs and other
+problems. Please report such to the author of this package. Please also report any ideas
+for enhancements you may have for either package and/or documentation.
+
+[section "Code Copyright"]
+
+BSD License type:
+
+[para] The following terms apply to all files a ssociated with the software unless
+explicitly disclaimed in individual files.
+
+[para] The authors hereby grant permission to use, copy, modify, distribute, and license
+this software and its documentation for any purpose, provided that existing copyright
+notices are retained in all copies and that this notice is included verbatim in any
+distributions. No written agreement, license, or royalty fee is required for any of the
+authorized uses.  Modifications to this software may be copyrighted by their authors and
+need not follow the licensing terms described here, provided that the new terms are
+clearly indicated on the first page of each file where they apply.
+
+[para] In no event shall the authors or distributors be liable to any party for direct,
+indirect, special, incidental, or consequential damages arising out of the use of this
+software, its documentation, or any derivatives thereof, even if the authors have been
+advised of the possibility of such damage.
+
+[para] The authors and distributors specifically disclaim any warranties, including, but
+not limited to, the implied warranties of merchantability, fitness for a particular
+purpose, and non-infringement.
+
+This software is provided on an "as is" basis, and the authors and distributors have no
+obligation to provide maintenance, support, updates, enhancements, or modifications.
+
+[para] [emph {RESTRICTED RIGHTS}]: Use, duplication or disclosure by the government is
+subject to the restrictions as set forth in subparagraph (c) (1) (ii) of the Rights in
+Technical Data and Computer Software Clause as DFARS 252.227-7013 and FAR 52.227-19.
+
+[vset CATEGORY tmdoc]
+[manpage_end]

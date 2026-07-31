@@ -1,0 +1,4 @@
+#!/bin/sh
+rm -r ~/.critcl
+rm -r ./critcl
+rm ./*.log

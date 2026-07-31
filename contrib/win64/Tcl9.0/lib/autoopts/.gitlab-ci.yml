@@ -1,0 +1,15 @@
+image: alpine:3.6
+
+before_script:
+  - wget -O tclkit-8.5.19 http://kitcreator.rkeene.org/kits/c8735ddd4a6e12117bb1c5130df3c585711c4f7c/tclkit
+  - wget -O tclkit-8.6.7  http://kitcreator.rkeene.org/kits/22d3add757fa67939f5eb51a03cb2abdf0be6abe/tclkit
+  - echo 'ac6a441ae5754067dc9b673b8c1d55ee9e2081248d619378ccbb6613477fbc4c  tclkit-8.5.19' > checksum
+  - echo 'eb603bfa6c962e6db2169c9cfc2403f29a4b95ba47929ebf8dc64dde953f710b  tclkit-8.6.7' >> checksum
+  - sha256sum -c checksum && rm checksum
+  - chmod +x tclkit*
+
+test:
+  script:
+    - ./tclkit-8.5.19 autoopts.tcl
+    - ./tclkit-8.6.7  autoopts.tcl
+    - ./tclkit-8.6.7  transcript-generator.tcl

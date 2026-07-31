@@ -1,0 +1,595 @@
+# This file contains a sample that demonstrates Ruff!'s documentation
+# features. It also serves as test input.
+
+namespace eval ruff::sample {
+
+    variable _ruff_ns_opts {
+        -heading "Examples"
+        -excludeclasses ExcludedClass
+        -excludeprocs excluded.*
+        -onlyexports false
+    }
+
+
+    variable _ruff_preamble {
+        ## Introduction
+
+        This page illustrates the various documentation features in
+        [Ruff!](ruff.html) via examples. The corresponding source is
+        [here](https://raw.githubusercontent.com/apnadkarni/ruff/refs/heads/master/doc/sample.tcl).
+        Alternatively, for procedures and methods, you can click the *Show
+        source* link below each procedure or method documentation to see the
+        source from which the documentation was generated.
+
+        The documentation (such as this section) not specific to a *procedure*
+        or *method* is placed in the variable `_ruff_preamble` within each
+        namespace.
+
+        ## Formatting
+
+        The formatting elements described below may appear both within
+        `_ruff_preamble` content as well as proc and method comments.
+
+        ### Lists
+
+        This is an **unnumbered list**.
+        ````
+          * First item
+          * Second
+          item
+          across multiple lines
+          * Third item
+        ````
+        This is displayed as
+
+        * First item
+        * Second
+        item
+        across multiple lines
+        * Third item
+
+        This is an **numbered list**.
+        ````
+          1. First item
+          1. Second
+          item
+          across multiple lines
+          1. Third item
+        ````
+        This is displayed as
+
+        1. First item
+        1. Second
+        item
+        across multiple lines
+        1. Third item
+
+        This is a **definition list**.
+        ````
+        itema - Definition of item A
+        `itemb` - Definition of item B
+        across multiple input lines
+        in code font.
+        ````
+
+        Definition lists are displayed in an output-specific format.
+
+        itema - Definition of item A
+        `itemb` - Definition of item B
+        across multiple input lines
+        in code font.
+
+        ### Inline formatting
+
+        ````
+        Basic markdown inline formatting is supported as
+        `code`, *emphasis*, **strong** and ***strong emphasis***.
+        ````
+        Basic markdown inline formatting is supported as
+        `code`, *emphasis*, **strong** and ***strong emphasis***.
+
+        ````
+        **This is a \\ (backslash) within strong markup.**
+        ````
+
+        **This is a \\ (backslash) within strong markup.**
+
+        ### Links
+
+        ````
+        Links may be references to program elements, e.g. [Derived], to
+        external resources, e.g. [example](https://www.example.com) or
+        explicit, e.g. <https://ruff.magicsplat.com>.
+        ````
+        Links may be references to program elements, e.g. [Derived], to
+        external resources, e.g. [example](https://www.example.com) or
+        explicit, e.g. <https://ruff.magicsplat.com>.
+
+
+        ### Fenced blocks
+
+        ````
+        ``` -caption "A fenced block"
+        Lines consisting of *3* or more backquotes can be used
+        to bracket unformatted content
+        like
+        this paragraph.
+        ```
+        ````
+
+        ``` -caption "A fenced block"
+        Lines consisting of *3* or more backquotes can be used
+        to bracket unformatted content
+        like
+        this paragraph.
+        ```
+
+        The `-caption` option is optional. If specified, it is shown
+        below the output and can be linked to using the value of the option.
+        For example `[A fenced block]` will link as [A fenced block].
+
+        In the HTML formatter, captions are automatically prefixed as *Figure
+        1*, *Figure 2* etc.. The numbering is across the entire document set,
+        not per page, by design.
+
+        The fence can be followed by a language specifier (any string)
+        *without any intervening whitespace*.
+
+        ````
+        ```tcl
+        set lang "This is Tcl code"
+        ```
+        ````
+
+        ```tcl
+        set lang "This is Tcl code"
+        ```
+
+        Not all formatters make use of the language specifier.
+
+        ### HTML input
+
+        ```
+        <b>This is bolded inline HTML</b>. Not all formatters support inline HTML.
+        ```
+
+        <b>This is bolded inline HTML</b>. Not all formatters support inline HTML.
+
+        ```
+        `&amp;` is encoded as an HTML entity &amp;.
+        ```
+
+        `&amp;` is encoded as an HTML entity &amp;.
+
+
+        ### Diagrams
+
+        Diagrams can be embedded in several formats such as `ditaa`,
+
+        ````
+        ``` -caption "A ditaa diagram" diagram ditaa
+        +--------+   +-------+    +-------+
+        |        | --+ ditaa +--> |       |
+        |  Text  |   +-------+    |diagram|
+        |Document|   |!magic!|    |       |
+        |     {d}|   |       |    |       |
+        +---+----+   +-------+    +-------+
+        :                         ^
+        |       Lots of work      |
+        +-------------------------+
+        ```
+        ````
+
+        ``` -caption "A ditaa diagram" diagram ditaa
+        +--------+   +-------+    +-------+
+        |        | --+ ditaa +--> |       |
+        |  Text  |   +-------+    |diagram|
+        |Document|   |!magic!|    |       |
+        |     {d}|   |       |    |       |
+        +---+----+   +-------+    +-------+
+        :                         ^
+        |       Lots of work      |
+        +-------------------------+
+        ```
+
+        or PlantUML,
+
+        ````
+        ``` -caption "A PlantUML diagram generated by kroki" diagram kroki plantuml
+        @startuml
+        Alice -> Bob: Authentication Request
+        Bob --> Alice: Authentication Response
+
+        Alice -> Bob: Another authentication Request
+        Alice <-- Bob: Another authentication Response
+        @enduml
+        ```
+        ````
+
+        ``` -caption "A PlantUML diagram generated by kroki" diagram kroki plantuml
+        @startuml
+        Alice -> Bob: Authentication Request
+        Bob --> Alice: Authentication Response
+
+        Alice -> Bob: Another authentication Request
+        Alice <-- Bob: Another authentication Response
+        @enduml
+        ```
+
+        and several others. You can link to a diagram using the string
+        specified with its `-caption` option.
+
+        ### Images
+
+        Images can be specified using either Markdown or inline HTML. The former
+        is preferred as even formatters that support images may not support
+        inline HTML.
+
+        #ruffopt excludedformats nroff
+        * ![alt img](assets/ruff-logo.png) `![alt img](assets/ruff-logo.png)`
+        * <img src='assets/ruff-logo.png' alt='logo'/> `<img src='assets/ruff-logo.png' alt='logo'/>`
+        * <img src="assets/ruff-logo.png" alt=""/> `<img src="assets/ruff-logo.png" alt=""/>`
+
+        <!-- The empty alt above is for testing bugfix #49 -->
+
+        #ruffopt includedformats nroff
+        ```
+        * ![alt img](assets/ruff-logo.png) `![alt img](assets/ruff-logo.png)`
+        * <img src='assets/ruff-logo.png' alt='logo'/> `<img src='assets/ruff-logo.png' alt='logo'/>`
+        * <img src="assets/ruff-logo.png" alt=""/> `<img src="assets/ruff-logo.png" alt=""/>`
+        ```
+
+        #ruffopt excludedformats {}
+
+        The remaining sections show how commands and classes are documented.
+        Click on the *Show source* link to see the underlying source code
+        for the procedure or method from which the documentation was generated.
+
+    }
+
+    # An ensemble example
+    namespace eval ensemble_proc {
+        proc cmdA {} {
+            # Implements cmdA for an ensemble procedure
+        }
+
+        proc cmdB {args} {
+            # Implements cmdB for an ensemble procedure
+            #  paramA - the first param
+            #  paramB - the optional second param
+            # Synopsis: paramA paramB
+            # Synopsis: paramX
+
+        }
+        namespace export *
+        namespace ensemble create
+    }
+
+    proc excluded_proc {} {}
+    oo::class create ExcludedClass {
+        construct {} {
+            # This class should not show up in the documentation.
+        }
+    }
+}
+
+proc ruff::sample::proc_without_docs {first_arg second_arg} {
+}
+
+proc ruff::sample::proc_full {arg {optarg AVALUE} args} {
+    # This first line is the summary line for documentation.
+    # arg - first parameter
+    # optarg - an optional parameter
+    # -switch VALUE - an optional switch
+    #
+    # This is the general description of the procedure
+    # composed of multiple paragraphs. It is separated from
+    # the parameter list above by one or more empty comments.
+    #
+    # This is the second paragraph. The next paragraph (in the *source* comments)
+    # starts with the word Returns and hence will be treated
+    # by Ruff! as describing the return value.
+    #
+    # Returns a value. Because it started with the **Returns**
+    # keyword, this paragraph is treated as the return value
+    # description no matter where it appears.
+    #
+    # A definition list has a similar form to the argument
+    # list. For example, optarg may take the following values:
+    #  AVALUE - one possible value
+    #  BVALUE - another possible value
+    #
+    #  CVALUE - a third value but note the intervening blank comment
+    #  above in the source code.
+    # Bullet lists are indicated by a starting `-` or `*` character.
+    # - This is a bullet list iterm
+    # * This is also a bullet list item
+    #
+    # An optional *See also* section may be used to
+    # cross-reference other program elements. Each line of this section
+    # must be parsable as a Tcl list.
+    #
+    # See also: proc_without_docs [Base] <https://www.magicsplat.com>
+    #   "ensemble_proc cmdA" {ensemble_proc cmdB}
+    # See also: proc_full
+    # See also: character_at
+
+
+    # This paragraph will be ignored by Ruff! as it is not part
+    # of the initial block of comments.
+
+    some code
+
+    #ruff
+    # Thanks to the #ruff marker, this paragraph will be
+    # included by Ruff! even though it is not in the initial block
+    # of comments. This is useful for putting documentation for
+    # a feature right next to the code implementing it.
+
+    some more code.
+}
+
+proc ruff::sample::proc_args_and_options {c a b args} {
+    # This proc for testing argument order
+    #
+    # -secondopt - second option
+    # b - arg b
+    # a - arg a
+    # c - arg c
+    # args - optional args
+    # -firstopt - first option
+}
+
+proc ruff::sample::proc_with_custom_synopsis {args} {
+    # This is a proc with a custom synopsis
+    #  A - arg A for first synopsis
+    #  B - arg V for first synopsis
+    #  DIFFERENT_PARAM_SIG - arg for another synopsis
+    # A custom synopsis is useful when a command takes several
+    # different argument structures.
+    # Synopsis: A B
+    #   C D
+    # Synopsis: DIFFERENT_PARAM_SIG
+    # Synopsis: X Y args
+}
+
+proc ruff::sample::character_at {text {pos 0}} {
+    # Get the character from a string.
+    #  text - Text string.
+    #  pos  - Character position.
+    # The command will treat negative values of $pos as offset from
+    # the end of the string.
+    #
+    # Note the use of `Returns:` as opposed to `Returns` (i.e. with a colon) in
+    # the source comments. See docs for the difference.
+    #
+    # Returns: The character at index $pos in string $text.
+    set n [string length $text]
+    if {[tcl::mathfunc::abs $pos] >= [string length $text]} {
+        #ruff
+        # An error exception is raised if $pos is not within bounds.
+        error "Index $pos out of bounds."
+    }
+    if {$pos < 0} {
+        return [string index $text end$pos]
+    } else {
+        return [string index $text $pos]
+    }
+}
+
+proc ruff::sample::proc_with_conditional_content {} {
+    # This is a proc that uses `#ruffopt` directive to select content based formatter.
+    #
+    #ruffopt includedformats html
+    # <div style="ruff_bd"> <table class="ruff_deflist"> <tbody>
+    # <tr><th>Column1</th><th>Column2</th><th>Column3</th><th>Column4</th><th>Column5</th></tr>
+    # <tr><td>1</td><td>element1</td><td>element2</td><td>element3</td><td>element4</td></tr>
+    # <tr><td>2</td><td>element5</td><td>element6</td><td>element7</td><td>element8</td></tr>
+    # </tbody> </table> </div>
+    #
+    #ruffopt excludedformats {html markdown}
+    #```
+    # ┌─────────┬──────────┬──────────┬──────────┬──────────┐
+    # │ Column1 │ Column2  │ Column3  │ Column4  │ Column5  │
+    # ├─────────┼──────────┼──────────┼──────────┼──────────┤
+    # │ 1       │ element1 │ element2 │ element3 │ element4 │
+    # │ 2       │ element5 │ element6 │ element7 │ element8 │
+    # └─────────┴──────────┴──────────┴──────────┴──────────┘
+    #```
+    #
+    #ruffopt includedformats markdown
+    #| Column1 | Column2  | Column3  | Column4  | Column5  |
+    #|---------|----------|----------|----------|----------|
+    #| 1       | element1 | element2 | element3 | element4 |
+    #| 2       | element5 | element6 | element7 | element8 |
+}
+
+oo::class create ruff::sample::Base {
+    if {[::ruff::Tcl9]} {
+        classmethod _ruffClassHook {} {
+            return {
+                preamble {
+                    This is the preamble containing the class section. It will
+                    appear immediately below the class heading.
+
+                    It may contain multiple text elements including
+                    - paragraphs
+                    - definition lists
+                    - lists
+                    - table
+                    etc.
+
+                    It is generally not advisable to include headings in the text.
+                } options {
+                    The options text appears under the `Options` heading right
+                    after the `Parameters` section. It may contain any docstring
+                    though it generally should contain only options, like for
+                    Tk widgets, as a definition list:
+
+                    -option1 - the first option
+                    -option1 ARG - the second option
+                }
+            }
+        }
+    }
+    constructor {arg} {
+        # Constructs the class
+        #   arg - argument to constructor
+        # The constructor for the class should also include
+        # general information for the class.
+    }
+    destructor {
+        # Releases all resources and destroys the class
+    }
+    if {[::ruff::Tcl9]} {
+        classmethod class_method {} {
+            # This method is defined on the class, not class instance
+        }
+    }
+    method base_method {arga argb}  {
+        # base_method is defined only in the base class
+        # arga - first argument
+        # argb - second argument from
+        #
+        # This is method m1
+        #
+        # This is a reference to method [<tag>].
+        #
+        # See also: <tag>
+    }
+    method property args {
+        # Method with custom synopsis
+        #  PROPERTYNAME - name of property
+        #  VALUE - value to set for property
+        # Synopsis: PROPERTYNAME
+        # Synopsis: PROPERTYNAME ?VALUE?
+    }
+    method overridable_method {} {
+        # This method will be overridden in the derived class
+        #
+        # Calls [base_method]
+    }
+    method <tag> {} {
+        # An explicitly exported method looking like a html tag
+        #
+        # Verify it also shows in [base_method] description as well
+        # as See also section.
+    }
+    forward fwd_method string range
+    export <tag>
+
+}
+
+oo::class create ruff::sample::Mixin {
+    method mixed_in_method {arg} {
+        # This method will be mixed into a class.
+        # arg - an argument to the method
+    }
+}
+
+oo::class create ruff::sample::Derived {
+    superclass ::ruff::sample::Base
+    mixin ::ruff::sample::Mixin
+    method overridable_method {} {
+        # This method overrides the one defined in [Base].
+    }
+    method added_method {} {
+        # Method defined only in [Derived].
+    }
+}
+
+oo::class create ruff::sample::FunnyMethods {
+    constructor {} {
+        # Class for testing special characters in method names
+    }
+    method + {} {
+        # Method to test regexp special chars
+    }
+    method * {} {
+        # Method to test regexp special chars
+    }
+    method > {} {
+        # Method to test > escaping in HTML
+    }
+    method < {} {
+        # Method to test < escaping in HTML
+    }
+    method & {} {
+        # Method to test & escaping in HTML
+    }
+    method _ {} {
+        # Method to test underscores
+    }
+    method \` {} {
+        # Method to test ` (backquote)
+    }
+    method trailing\` {} {
+        # Method to test trailing` (backquote)
+    }
+    export + * > < & _ \`
+
+}
+
+oo::class create ruff::sample::ClassWithMissingDocs {
+    method m {a b} {}
+}
+
+oo::class create ruff::sample::MetaClass {
+    superclass ::oo::class
+}
+
+ruff::sample::MetaClass create ruff::sample::MetaClassInstance {
+    method amethod {} {
+        # A method of a class created from a metaclass
+    }
+}
+
+if {[package vsatisfies [package require Tcl] 9]} {
+    oo::configurable create ruff::sample::ConfigurableClass {
+        property rprop -kind readable
+        property wprop -kind writable
+        property rwprop -set {
+            # This is a special function for setting a rw property.
+            #
+            # The property is an attribute of the [ConfigurableClass] class.
+        } -get {
+            # This is a special function for reading a rw property.
+        }
+
+        constructor {} {
+            # A class with properties
+        }
+
+        classmethod _ruffClassHook {} {
+            return {
+                preamble {
+                    This is a configurable class with properties.
+                } propertydescriptions {
+                    -rprop {
+                        This is the documentation for the -rprop property.
+                    }
+                    -rwprop {
+                        This is the documentation for the -rwprop property.
+
+                        It belongs to the [ConfigurableClass] class.
+                    }
+                }
+            }
+        }
+    }
+    oo::configurable create ruff::sample::DerivedConfigurableClass {
+        superclass ruff::sample::ConfigurableClass
+        property derivedprop -get {
+            # This is a derived property.
+        }
+        classmethod _ruffClassHook {} {
+            return {
+                propertydescriptions {
+                    -derivedprop {
+                        This is the documentation for the -derivedprop property.
+                    }
+                }
+            }
+        }
+    }
+}

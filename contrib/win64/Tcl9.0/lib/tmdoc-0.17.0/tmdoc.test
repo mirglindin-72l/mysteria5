@@ -1,0 +1,887 @@
+#!/usr/bin/env tclsh
+lappend auto_path ..
+package require tcltest
+package require tmdoc
+
+puts stderr "starting Tcl test"
+tcltest::test tmdoc-test-1.1 {
+    Calling my tmdoc::tmeval with a simple code chunk
+} -body {
+     tmdoc::tmeval "\n```{.tcl}
+set x 1; set x
+```\n"   
+} -result {
+```tclcode
+set x 1; set x
+```
+
+```tclout
+==> 1
+```
+
+}
+
+tcltest::test tmdoc-test-1.2 {
+    Calling my tmdoc::tmeval with a simple code chunk and echo=false
+} -body {
+     tmdoc::tmeval "\n```{.tcl echo=false}
+set x 2; set x
+```\n"   
+} -result {
+```tclout
+==> 2
+```
+
+}
+
+tcltest::test tmdoc-test-1.3 {
+    Calling my tmdoc::tmeval with a simple code chunk and 
+    eval=false and results=hide
+} -body {
+     tmdoc::tmeval "
+Some text
+
+```{.tcl echo=false results=hide}
+set x 3; set x
+```\n"
+} -result {
+Some text
+
+
+}
+
+tcltest::test tmdoc-test-1.4 {
+    Calling my tmdoc::tmeval with a simple code chunk and 
+    eval=false and results=hide separated by comma
+} -body {
+     tmdoc::tmeval "
+Some text
+
+```{.tcl echo=false results=hide}
+set x 3; set x
+```\n"
+} -result {
+Some text
+
+
+}
+
+tcltest::test tmdoc-test-1.5 {
+    Calling my tmdoc::tmeval with a simple code chunk and 
+    eval=false and results=hide separated by comma
+    with space and tcl instead of .tcl marker
+} -body {
+     tmdoc::tmeval "
+Some text with space test
+
+``` {tcl echo=false, results=hide}
+set x 5; set x
+```"
+
+} -result {
+Some text with space test
+
+}
+
+tcltest::test tmdoc-test-1.6 {checking include} -body {
+   set out [open include.md w 0600]
+   puts $out "## Hello Include"
+   close $out
+   tmdoc::tmeval "
+Some text
+
+`tcl include include.md`
+
+Some text
+"
+} -result {
+Some text
+
+## Hello Include
+
+Some text
+
+}
+
+tcltest::test tmdoc-test-1.7 {checking include} -body {
+   tmdoc::tmeval "
+Some text
+
+`include include.md`
+
+Some text
+"
+} -result {
+Some text
+
+## Hello Include
+
+Some text
+
+}
+
+tcltest::test tmdoc-test-1.8 {
+    Calling my tmdoc::tmeval with results=asis 
+    to display a table using the list2md command
+} -body {
+     tmdoc::tmeval "
+Some text
+
+```{tcl echo=false, results=asis}
+set h {A B C}
+puts \[list2mdtab \$h \[list 1 2 3 4 5 6\]\]
+```" 
+
+} -result {
+Some text
+
+| A | B | C |
+| ---- | ---- | ---- |
+| 1 | 2 | 3 |
+| 4 | 5 | 6 |
+
+}
+
+tcltest::test tmdoc-test-1.9 {
+    Calling my tmdoc::tmeval with results=asis 
+    to display a table using csv input
+} -body {
+     tmdoc::tmeval "
+Some text
+
+```{.csv echo=false, results=asis}
+col1,col2,col3
+1,2,3
+4,5,6
+7,8,9
+```"
+
+} -result {
+Some text
+
+| col1 | col2 | col3 |
+| ---- | ---- | ---- |
+| 1 | 2 | 3 |
+| 4 | 5 | 6 |
+| 7 | 8 | 9 |
+
+}
+
+tcltest::test tmdoc-test-1.10 {
+    Calling my tmdoc::tmeval with alert message
+    for a note
+} -body {
+     string trim [tmdoc::tmeval "> \[!NOTE\]
+> This is a note!     
+"]
+} -result {<div class="side-note"><p><b>Note:</b> 
+This is a note!     
+</p></div>}
+
+
+tcltest::test tmdoc-test-1.11 {
+    Checking abbreviations in the YAML header.
+} -body {
+    string trim [tmdoc::tmeval "---
+title: This is test
+author: Max Musterman
+---
+
+# {title}
+
+{author}
+"]
+} -result {---
+title: This is test
+author: Max Musterman
+---
+
+# This is test
+
+Max Musterman}
+
+tcltest::test tmdoc-test-1.12 {
+    Checking space around = sign in the code chunk options
+} -body {
+    string trim [tmdoc::tmeval "```{.tcl eval = TRUE}
+set x 1
+set x
+```
+"]
+} -result {```tclcode
+set x 1
+set x
+```
+
+```tclout
+==> 1
+```}
+
+
+tcltest::test tmdoc-test-1.13 {
+    Checking kbd tag with complete tcl code
+} -body {
+    string trim [tmdoc::tmeval "Example for kbd tag:
+`tcl tag kbd Ctrl-x`
+
+save a file: `kbd Ctrl-x` `kbd Ctrl-s`.
+
+menu entry: `menu File` - `menu Save`.
+
+Now a menu which is given as a list:
+
+Change Indent width in Geany: `menu {Document {Indent Type} Spaces}`.
+"]
+} -result {Example for kbd tag:
+<kbd>Ctrl-x</kbd>
+
+save a file: <kbd>Ctrl-x</kbd> <kbd>Ctrl-s</kbd>.
+
+menu entry: <kbd class="menu">File</kbd> - <kbd class="menu">Save</kbd>.
+
+Now a menu which is given as a list:
+
+Change Indent width in Geany: <kbd class="menu">Document</kbd> &#8594; <kbd class="menu">Indent Type</kbd> &#8594; <kbd class="menu">Spaces</kbd>.}
+
+puts stderr "starting Comment test"
+tcltest::test tmdoc-comment-1.1 {
+    Checking comment syntax
+} -body {
+    string trim [tmdoc::tmeval "This some text.
+
+<!-- and now follows some comment
+and here another line
+-->
+
+And here again text which should be displayed.
+
+Followed by some text with an <!-- comment -->
+inline comment.
+"]
+} -result {This some text.
+
+
+And here again text which should be displayed.
+
+Followed by some text with an 
+inline comment.}
+
+puts stderr "starting Python test"
+
+tcltest::test tmdoc-python-1.1 {
+    Checking Python pipe.
+} -body {
+    string trim [tmdoc::tmeval "```{.pipe pipe=python}
+x=1
+y=2
+print(x)
+```
+
+y is `py print(y)`
+"]
+} -result {```python
+x=1
+y=2
+print(x)
+```
+
+```python
+1
+```
+
+
+y is 2}
+
+
+tcltest::test tmdoc-python-1.2 {
+    Checking Python pipe with py code name.
+} -body {
+    string trim [tmdoc::tmeval "```{py}
+x=2
+print(x)
+```
+
+X is `py print(x)`
+"]
+} -result {```python
+x=2
+print(x)
+```
+
+```python
+2
+```
+
+
+X is 2}
+
+tcltest::test tmdoc-python-1.3 {
+    Checking Python pipe with error
+} -body {
+    string trim [tmdoc::tmeval "```{py}
+y1=2
+print(y2)
+```
+"]} -result {```python
+y1=2
+print(y2)
+```
+
+```python
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+    print(y2)
+          ^^
+NameError: name 'y2' is not defined. Did you mean: 'y'?
+```}
+
+tcltest::test tmdoc-python-1.4 {
+    Checking Python pipe with eval=FALSE to not show empty pre section.
+} -body {
+    string trim [tmdoc::tmeval "```{py eval=FALSE}
+x=2
+print(x)
+```
+
+Some text.
+"]
+} -result {```python
+x=2
+print(x)
+```
+
+
+
+Some text.}
+
+tcltest::test tmdoc-python-1.5 {
+    Checking Python Hello World.
+} -body {
+    string trim [tmdoc::tmeval "```{py}
+print('Hello Python World!')
+```
+"]
+} -result {```python
+print('Hello Python World!')
+```
+
+```python
+Hello Python World!
+```}
+
+tcltest::test tmdoc-python-1.6 {
+    Checking Python time.sleep.
+} -body {
+    string trim [tmdoc::tmeval "```{py}
+import time
+x=5
+time.sleep(3)
+print(x)
+time.sleep(1)
+x=6
+print(x)
+```
+
+x is `py x`!
+"]
+} -result {```python
+import time
+x=5
+time.sleep(3)
+print(x)
+time.sleep(1)
+x=6
+print(x)
+```
+
+```python
+5
+6
+```
+
+
+x is 6!}
+
+puts stderr "starting Octave test"
+
+tcltest::test tmdoc-octave-1.1 {
+    Checking Octave pipe.
+} -body {
+    string trim [tmdoc::tmeval "```{.pipe pipe=\"octave\"}
+x=1;
+disp(x);
+y=2;
+disp(y);
+```
+
+X is `oc disp(x);`!
+"]
+} -result {```octave
+x=1;
+disp(x);
+y=2;
+disp(y);
+```
+
+```octave
+octave> x=1;
+octave> disp(x);
+1
+octave> y=2;
+octave> disp(y);
+2
+```
+
+
+X is 1!}
+
+tcltest::test tmdoc-octave-1.2 {
+    Checking Octave pipe code with oc code name.
+} -body {
+    string trim [tmdoc::tmeval "```{oc}
+x=4;
+disp(x);
+```
+
+X is `oc disp(x);`!
+"]
+} -result {```octave
+x=4;
+disp(x);
+```
+
+```octave
+octave> x=4;
+octave> disp(x);
+4
+```
+
+
+X is 4!}
+
+tcltest::test tmdoc-octave-1.3 {
+    Octave error check
+} -body {
+    string trim [tmdoc::tmeval "```{oc}
+y=2
+disp(y):
+```
+"]
+} -result {```octave
+y=2
+disp(y):
+```
+
+```octave
+octave> y=2
+y = 2
+octave> disp(y):
+error: parse error:
+  syntax error
+>>> disp(y):
+           ^
+```}
+
+tcltest::test tmdoc-octave-1.4 {
+    Checking Octave sleep.
+} -body {
+    string trim [tmdoc::tmeval "```{.oc}
+x=3;
+disp(x);
+y=3;
+pause(3);
+disp(y);
+```
+
+X is `oc disp(x);`!
+"]
+} -result {```octave
+x=3;
+disp(x);
+y=3;
+pause(3);
+disp(y);
+```
+
+```octave
+octave> x=3;
+octave> disp(x);
+3
+octave> y=3;
+octave> pause(3);
+octave> disp(y);
+3
+```
+
+
+X is 3!}
+
+puts stderr "starting R-test"
+
+tcltest::test tmdoc-r-1.1 {
+    Checking R pipe code with r code name.
+} -body {
+    string trim [tmdoc::tmeval "```{r}
+x=3
+print(x)
+```
+
+X is `r x`!
+"]
+} -result {```R
+x=3
+print(x)
+```
+
+```R
+> x=3
+> print(x)
+[1] 3
+```
+
+
+X is 3!}
+
+
+tcltest::test tmdoc-r-1.2 {
+    Checking R pipe code with continuation lines.
+} -body {
+    string trim [tmdoc::tmeval "```{r results=show echo=false}
+for (i in 1:4) {
+    print(i)
+}
+```
+"]
+} -result {```R
+> for (i in 1:4) {
++     print(i)
++ }
+[1] 1
+[1] 2
+[1] 3
+[1] 4
+```}
+
+tcltest::test tmdoc-r-1.3 {
+    Checking R pipe code with image creation.
+} -body {
+    string trim [tmdoc::tmeval "```{r label=testlab results=show echo=false fig=true}
+plot(1)
+```
+"]
+} -result {```R
+> plot(1)
+```
+
+![ ](testlab.png)}
+
+tcltest::test tmdoc-r-1.4 {
+    Checking R pipe code with image creation and include=false.
+} -body {
+    string trim [tmdoc::tmeval "```{r label=testlab results=show echo=false fig=true include=false}
+plot(1)
+```
+"]
+} -result {```R
+> plot(1)
+```}
+
+
+tcltest::test tmdoc-r-1.5 {
+    Checking R pipe code with df2md command results=asis.
+} -body {
+    string trim [tmdoc::tmeval {```{.pipe pipe="R" results="asis" echo=false}
+data(mtcars)
+df2md(head(mtcars[, 1:4],n=4))
+```}]
+} -result {||**mpg**|**cyl**|**disp**|**hp**|
+|---|---|---|---|---|
+|**Mazda RX4**|21|6|160|110|
+|**Mazda RX4 Wag**|21|6|160|110|
+|**Datsun 710**|22.8|4|108|93|
+|**Hornet 4 Drive**|21.4|6|258|110|}
+
+tcltest::test tmdoc-r-1.6 {
+    Checking df2md for table command
+} -body {
+    string trim [tmdoc::tmeval {
+```{r echo=FALSE,results="asis"}
+set.seed(1234)
+v1=sample(1:4,20,replace=TRUE)
+v2=sample(1:4,20,replace=TRUE)
+t = table(v1,v2)
+df2md(t)
+```
+}] 
+} -result {||**1**|**2**|**3**|**4**|
+|---|---|---|---|---|
+|**1**|0|0|0|3|
+|**2**|2|3|1|2|
+|**3**|1|1|1|0|
+|**4**|0|2|2|2|}
+
+
+tcltest::test tmdoc-r-1.7 {
+    Checking R single backtick pipe with longer return string
+} -body {
+    string trim [tmdoc::tmeval {`r substr(R.version.string,1,12)`}] 
+} -result {R version 4.}
+
+tcltest::test tmdoc-r-1.8 {
+    Checking R errors
+} -body {
+    string trim [tmdoc::tmeval {```{r}
+x=1
+rm(x)
+print(x)
+```}]
+} -result {```R
+x=1
+rm(x)
+print(x)
+```
+
+```R
+> x=1
+> rm(x)
+> print(x)
+Error: object 'x' not found
+```}
+
+tcltest::test tmdoc-r-1.9 {
+    Checking long computations ...
+} -body {
+    string trim [tmdoc::tmeval {```{r wait=2000}
+x=1
+Sys.sleep(1)
+print(x)
+```}]
+} -result {```R
+x=1
+Sys.sleep(1)
+print(x)
+```
+
+```R
+> x=1
+> Sys.sleep(1)
+> print(x)
+[1] 1
+```}
+
+tcltest::test tmdoc-r-1.8 {
+    Checking R errors
+} -body {
+    string trim [tmdoc::tmeval {```{r}
+x=1
+rm(x)
+print(x)
+```}]
+} -result {```R
+x=1
+rm(x)
+print(x)
+```
+
+```R
+> x=1
+> rm(x)
+> print(x)
+Error: object 'x' not found
+```}
+
+puts stderr "starting Julia test"
+
+tcltest::test tmdoc-julia-1.1 {
+    Checking Julia code
+} -body {
+    string trim [tmdoc::tmeval {```{.pipe pipe="julia" results="show" terminal=true}
+x=1;
+println(x);
+y=x+1;
+println(y);
+```
+}]
+} -result {```julia
+x=1;
+println(x);
+y=x+1;
+println(y);
+```
+
+```julia
+1
+1
+2
+2
+```}
+
+tcltest::test tmdoc-julia-1.2 {
+    Checking Julia code with sleep
+} -body {
+    string trim [tmdoc::tmeval {```{.pipe pipe="julia" results="show" terminal=true}
+x=1;
+sleep(4);
+println(x);
+y=x+1;
+println(y);
+```
+}]
+} -result {```julia
+x=1;
+sleep(4);
+println(x);
+y=x+1;
+println(y);
+```
+
+```julia
+1
+1
+2
+2
+```}
+
+tcltest::test tmdoc-julia-1.3 {
+    Checking Julia code with sleep and inline Julia
+} -body {
+    string trim [tmdoc::tmeval {```{julia results="show"}
+x=1;
+sleep(4);
+println(x);
+y=x+2;
+println(y);
+```
+
+The value of Julias y is `jl y`. Should be three!
+}]
+} -result {```julia
+x=1;
+sleep(4);
+println(x);
+y=x+2;
+println(y);
+```
+
+```julia
+1
+1
+3
+3
+```
+
+
+The value of Julias y is 3. Should be three!}
+
+puts stderr "starting AsciiDoc test"
+
+tcltest::test tmdoc-adoc-1.1 {
+    Checking AsciiDoc generation
+} -body {
+set ::inmode adoc
+ string trim [tmdoc::tmeval {```{.tcl results="show" echo=true}
+puts "Hello AsciiDoc"
+```                
+} tdoc]
+}  -result {[,tclcode]
+----
+puts "Hello AsciiDoc"
+----
+
+
+[,tclout]
+----
+Hello AsciiDoc
+----}
+
+tcltest::test tmdoc-adoc-1.2 {
+    Checking AsciiDoc generation
+    of csv based table
+} -body {
+string trim [tmdoc::tmeval {
+Some text
+
+```{.csv echo=false, results=asis}
+col1,col2,col3
+1,2,3
+4,5,6
+7,8,9
+```"
+
+} tdoc]}  -result {Some text
+
+[cols="1,1,1"]
+|===
+| col1| col2| col3
+
+|1|2|3
+|4|5|6
+|7|8|9
+|===}
+
+puts stderr "starting Typst test"
+
+tcltest::test tmdoc-typst-1.1 {
+    Checking AsciiDoc generation
+} -body {
+set ::inmode typst
+ string trim [tmdoc::tmeval {```{.tcl results="show" echo=true}
+puts "Hello Typst"
+```                
+} typst]
+}  -result {```tcl
+puts "Hello Typst"
+```
+
+```tclout
+Hello Typst
+```}
+
+tcltest::test tmdoc-typst-1.2 {
+    Checking Typst  generation
+    of csv based table
+} -body {
+string trim [tmdoc::tmeval {
+Some text
+
+```{.csv echo=false, results=asis}
+col1,col2,col3
+1,2,3
+4,5,6
+7,8,9
+```"
+
+} typst]}  -result {Some text
+
+#set table.hline(stroke: 1.4pt)
+#table(
+  stroke:none,
+  columns: 3,
+  table.hline(),
+ [*col1*], [*col2*], [*col3*],
+  table.hline(),
+ [1], [2], [3],
+ [4], [5], [6],
+ [7], [8], [9],
+  table.hline(),
+)}
+
+puts stderr "starting Umlaut testing"
+
+tcltest::test tmdoc-umlaut-1.1 {
+    Checking German Umlauts
+} -body {
+ string trim [tmdoc::tmeval {## Test
+
+This is some test with Umlauts like ÄÖÜ and äöü.
+
+The letter ß is another serious problem in some cases.
+}]
+}  -result {## Test
+
+This is some test with Umlauts like ÄÖÜ and äöü.
+
+The letter ß is another serious problem in some cases.}
+
+::tcltest::cleanupTests 0
+

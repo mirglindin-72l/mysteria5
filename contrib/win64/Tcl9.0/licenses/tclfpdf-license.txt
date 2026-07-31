@@ -1,0 +1,1 @@
+See https://github.com/lamuzzachiodi/tclfpdf for license 

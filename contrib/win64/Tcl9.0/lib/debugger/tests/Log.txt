@@ -1,0 +1,68 @@
+block.test:	Total	27	Passed	27	Skipped	0	Failed	0
+initdebug.test:	Total	8	Passed	8	Skipped	0	Failed	0
+instrument.test:	Total	208	Passed	208	Skipped	0	Failed	0
+pref.test:	Total	83	Passed	83	Skipped	0	Failed	0
+system.test:	Total	3	Passed	0	Skipped	3	Failed	0
+Number of tests skipped for each constraint:
+	2	skipIfBuild
+	1	unix
+block.test:	Total	27	Passed	27	Skipped	0	Failed	0
+instrument.test:	Total	208	Passed	208	Skipped	0	Failed	0
+pref.test:	Total	83	Passed	83	Skipped	0	Failed	0
+block.test:	Total	27	Passed	27	Skipped	0	Failed	0
+instrument.test:	Total	208	Passed	208	Skipped	0	Failed	0
+pref.test:	Total	83	Passed	83	Skipped	0	Failed	0
+block.test:	Total	27	Passed	27	Skipped	0	Failed	0
+instrument.test:	Total	208	Passed	208	Skipped	0	Failed	0
+pref.test:	Total	83	Passed	83	Skipped	0	Failed	0
+system.test:	Total	3	Passed	0	Skipped	3	Failed	0
+Number of tests skipped for each constraint:
+	2	skipIfBuild
+	1	unix
+block.test:	Total	27	Passed	27	Skipped	0	Failed	0
+instrument.test:	Total	208	Passed	208	Skipped	0	Failed	0
+pref.test:	Total	83	Passed	83	Skipped	0	Failed	0
+system.test:	Total	3	Passed	0	Skipped	3	Failed	0
+Number of tests skipped for each constraint:
+	2	skipIfBuild
+	1	unix
+block.test:	Total	27	Passed	27	Skipped	0	Failed	0
+initdebug.test:	Total	8	Passed	8	Skipped	0	Failed	0
+instrument.test:	Total	208	Passed	208	Skipped	0	Failed	0
+pref.test:	Total	83	Passed	83	Skipped	0	Failed	0
+system.test:	Total	3	Passed	0	Skipped	3	Failed	0
+Number of tests skipped for each constraint:
+	2	skipIfBuild
+	1	unix
+block.test:	Total	27	Passed	27	Skipped	0	Failed	0
+initdebug.test:	Total	8	Passed	8	Skipped	0	Failed	0
+instrument.test:	Total	208	Passed	208	Skipped	0	Failed	0
+pref.test:	Total	83	Passed	83	Skipped	0	Failed	0
+system.test:	Total	3	Passed	0	Skipped	3	Failed	0
+Number of tests skipped for each constraint:
+	2	skipIfBuild
+	1	unix
+block.test:	Total	27	Passed	27	Skipped	0	Failed	0
+initdebug.test:	Total	8	Passed	8	Skipped	0	Failed	0
+instrument.test:	Total	208	Passed	208	Skipped	0	Failed	0
+pref.test:	Total	83	Passed	83	Skipped	0	Failed	0
+system.test:	Total	3	Passed	0	Skipped	3	Failed	0
+Number of tests skipped for each constraint:
+	2	skipIfBuild
+	1	unix
+block.test:	Total	27	Passed	27	Skipped	0	Failed	0
+initdebug.test:	Total	8	Passed	8	Skipped	0	Failed	0
+instrument.test:	Total	208	Passed	208	Skipped	0	Failed	0
+pref.test:	Total	83	Passed	83	Skipped	0	Failed	0
+system.test:	Total	3	Passed	0	Skipped	3	Failed	0
+Number of tests skipped for each constraint:
+	2	skipIfBuild
+	1	unix
+block.test:	Total	27	Passed	27	Skipped	0	Failed	0
+initdebug.test:	Total	8	Passed	8	Skipped	0	Failed	0
+instrument.test:	Total	208	Passed	208	Skipped	0	Failed	0
+pref.test:	Total	83	Passed	83	Skipped	0	Failed	0
+system.test:	Total	3	Passed	0	Skipped	3	Failed	0
+Number of tests skipped for each constraint:
+	2	skipIfBuild
+	1	unix

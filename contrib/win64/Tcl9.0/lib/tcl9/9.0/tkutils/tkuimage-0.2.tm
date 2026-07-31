@@ -1,0 +1,243 @@
+# tkutils::tkuimage -- image helpers and a scrollable/zoomable viewer widget for
+# Tk. Scaling uses the imgtools extension when present and falls back to Tk's
+# built-in photo subsample/zoom otherwise (imgtools is optional). Tk 8.6+/9.x.
+#
+#   tkuimage::fit 1920 1080 800 600          ;# -> {800 450 0.41666} (contain math)
+#   set thumb [tkuimage::thumbnail $photo 96]
+#   set v [tkuimage::view .v]; pack $v -fill both -expand 1
+#   tkuimage::openFile .v photo.png          ;# load + fit to the widget
+#   tkuimage::zoomIn .v ; tkuimage::zoomOut .v ; tkuimage::zoom1 .v ; tkuimage::fitView .v
+
+package require Tk 8.6-
+
+namespace eval ::tkutils {}
+namespace eval ::tkutils::tkuimage {
+    variable triedImgtools 0
+    namespace export fit scale thumbnail load fromData view openFile \
+        zoomIn zoomOut zoom1 fitView getImage zoomLevel
+    variable state
+    array set state {}
+    variable version 0.1
+}
+
+# --- pure fit math (no Tk needed) --------------------------------------
+# Return {newW newH scale} fitting imgW x imgH into boxW x boxH.
+# mode: contain (fit inside), cover (fill, may overflow), none (1:1).
+proc ::tkutils::tkuimage::fit {imgW imgH boxW boxH {mode contain}} {
+    if {$imgW <= 0 || $imgH <= 0} {
+        return -code error -errorcode {TKUTILS TKIMAGE SIZE} "image size must be positive"
+    }
+    switch -- $mode {
+        none  { return [list $imgW $imgH 1.0] }
+        cover { set s [expr {max(double($boxW)/$imgW, double($boxH)/$imgH)}] }
+        default { set s [expr {min(double($boxW)/$imgW, double($boxH)/$imgH)}] }
+    }
+    return [list [expr {int($imgW * $s)}] [expr {int($imgH * $s)}] $s]
+}
+
+# --- Tk-dependent helpers ----------------------------------------------
+
+# Load an image file into a photo image (PNG/GIF native; others need Img/tkimg).
+proc ::tkutils::tkuimage::load {file {dst ""}} {
+    if {$dst eq ""} { return [image create photo -file $file] }
+    $dst configure -file $file
+    return $dst
+}
+
+# Create a photo image from raw image bytes (PNG/GIF; JPEG needs Img/tkimg).
+# Uses Tk's -data option with base64. Returns $dst (created if empty).
+proc ::tkutils::tkuimage::fromData {bytes {dst ""}} {
+    set b64 [binary encode base64 $bytes]
+    if {$dst eq ""} { return [image create photo -data $b64] }
+    $dst configure -data $b64
+    return $dst
+}
+
+# Scale $src to w x h into $dst (created if empty). Uses imgtools if available,
+# otherwise Tk integer subsample/zoom. Returns $dst.
+# True if imgtools' smooth scaler is available. Checked lazily at call time
+# (not once at load), so it is used regardless of package load order and as
+# soon as imgtools becomes available.
+proc ::tkutils::tkuimage::_imgtools {} {
+    if {[info commands ::imgtools::scale] ne ""} { return 1 }
+    variable triedImgtools
+    if {!$triedImgtools} { set triedImgtools 1 ; catch {package require imgtools} }
+    return [expr {[info commands ::imgtools::scale] ne ""}]
+}
+
+proc ::tkutils::tkuimage::scale {src w h {dst ""}} {
+    if {$dst eq ""} { set dst [image create photo] }
+    set ow [image width $src]
+    set oh [image height $src]
+    if {$ow <= 0 || $oh <= 0 || $w <= 0 || $h <= 0} { return $dst }
+    if {[_imgtools] && ![catch {imgtools::scale $src ${w}x${h} $dst}]} {
+        return $dst
+    }
+    # Tk fallback: integer factors only.
+    $dst blank
+    if {$w < $ow || $h < $oh} {
+        set fx [expr {int(ceil(double($ow) / $w))}]
+        set fy [expr {int(ceil(double($oh) / $h))}]
+        set f [expr {max($fx, $fy, 1)}]
+        $dst copy $src -subsample $f $f
+    } elseif {$w > $ow || $h > $oh} {
+        set f [expr {max(min(int(double($w) / $ow), int(double($h) / $oh)), 1)}]
+        $dst copy $src -zoom $f $f
+    } else {
+        $dst copy $src
+    }
+    return $dst
+}
+
+# Scale $src to fit a maxSize x maxSize box (contain). Returns $dst photo.
+proc ::tkutils::tkuimage::thumbnail {src maxSize {dst ""}} {
+    lassign [fit [image width $src] [image height $src] $maxSize $maxSize contain] w h
+    return [scale $src $w $h $dst]
+}
+
+# --- viewer widget -----------------------------------------------------
+proc ::tkutils::tkuimage::view {path args} {
+    variable state
+    set fitmode contain
+    set onchange ""
+    foreach {k v} $args {
+        switch -- $k {
+            -fitmode  { set fitmode $v }
+            -onchange { set onchange $v }
+        }
+    }
+    frame $path
+    set c $path.c
+    canvas $c -highlightthickness 0
+    scrollbar $path.x -orient horizontal -command [list $c xview]
+    scrollbar $path.y -orient vertical   -command [list $c yview]
+    $c configure -xscrollcommand [list $path.x set] -yscrollcommand [list $path.y set]
+    grid $c      -row 0 -column 0 -sticky nsew
+    grid $path.y -row 0 -column 1 -sticky ns
+    grid $path.x -row 1 -column 0 -sticky ew
+    grid columnconfigure $path 0 -weight 1
+    grid rowconfigure    $path 0 -weight 1
+
+    set disp [image create photo]
+    set item [$c create image 0 0 -anchor nw -image $disp]
+    set state($path,canvas)  $c
+    set state($path,disp)    $disp
+    set state($path,item)    $item
+    set state($path,orig)    ""
+    set state($path,zoom)    1.0
+    set state($path,fitmode) $fitmode
+    set state($path,onchange) $onchange
+
+    bind $c    <Configure> [list ::tkutils::tkuimage::_onResize $path]
+    bind $path <Destroy>   [list ::tkutils::tkuimage::_cleanup $path %W]
+    return $path
+}
+
+proc ::tkutils::tkuimage::openFile {path file} {
+    variable state
+    set img [load $file]
+    if {$state($path,orig) ne "" && $state($path,orig) ne $img} {
+        catch {image delete $state($path,orig)}
+    }
+    set state($path,orig)    $img
+    set state($path,zoom)    1.0
+    set state($path,fitmode) contain
+    _redraw $path
+}
+
+proc ::tkutils::tkuimage::getImage {path} {
+    variable state
+    return $state($path,orig)
+}
+
+# Effective on-screen scale (displayed width / original width); 1.0 == 100%.
+# Works in both contain and actual modes by reading the displayed image.
+# Returns 0 if nothing is loaded yet.
+proc ::tkutils::tkuimage::zoomLevel {path} {
+    variable state
+    if {![info exists state($path,orig)] || $state($path,orig) eq ""} { return 0 }
+    if {[info exists state($path,fitmode)] && $state($path,fitmode) eq "actual"} {
+        return $state($path,zoom)
+    }
+    if {[info exists state($path,effscale)]} { return $state($path,effscale) }
+    return 0
+}
+
+proc ::tkutils::tkuimage::zoomIn  {path} { _setZoom $path 1.25 }
+proc ::tkutils::tkuimage::zoomOut {path} { _setZoom $path 0.8 }
+proc ::tkutils::tkuimage::zoom1   {path} {
+    variable state
+    set state($path,zoom) 1.0
+    set state($path,fitmode) actual
+    _redraw $path
+}
+proc ::tkutils::tkuimage::fitView {path} {
+    variable state
+    set state($path,fitmode) contain
+    _redraw $path
+}
+proc ::tkutils::tkuimage::_setZoom {path factor} {
+    variable state
+    # When zooming out of contain (fit) mode, continue from the scale that is
+    # actually on screen -- otherwise the first zoom would jump relative to the
+    # full original resolution (huge, slow scale for large images).
+    if {$state($path,fitmode) eq "contain" \
+            && [info exists state($path,effscale)] && $state($path,effscale) > 0} {
+        set state($path,zoom) $state($path,effscale)
+    }
+    set state($path,zoom) [expr {$state($path,zoom) * $factor}]
+    set state($path,fitmode) actual
+    _redraw $path
+}
+proc ::tkutils::tkuimage::_onResize {path} {
+    variable state
+    if {[info exists state($path,fitmode)] && $state($path,fitmode) eq "contain"} {
+        _redraw $path
+    }
+}
+proc ::tkutils::tkuimage::_redraw {path} {
+    variable state
+    set orig $state($path,orig)
+    if {$orig eq ""} { return }
+    if {[catch {image width $orig}]} { set state($path,orig) "" ; return }
+    set c $state($path,canvas)
+    set cw [winfo width $c]
+    set ch [winfo height $c]
+    if {$cw <= 1 || $ch <= 1} { return }
+    set ow [image width $orig]
+    set oh [image height $orig]
+    if {$state($path,fitmode) eq "contain"} {
+        lassign [fit $ow $oh $cw $ch contain] nw nh
+    } else {
+        set z $state($path,zoom)
+        set nw [expr {int($ow * $z)}]
+        set nh [expr {int($oh * $z)}]
+    }
+    # keep the displayed size sane: never 0 (no-op) and never absurdly large
+    if {$nw < 1} { set nw 1 }
+    if {$nh < 1} { set nh 1 }
+    if {$nw > 16384} { set nw 16384 }
+    if {$nh > 16384} { set nh 16384 }
+    set state($path,effscale) [expr {$ow > 0 ? double($nw) / $ow : 0}]
+    # reset the display image to the exact target size and clear it, so a
+    # previously larger image leaves no pixels behind when a smaller one is shown
+    set d $state($path,disp)
+    $d configure -width $nw -height $nh
+    $d blank
+    scale $orig $nw $nh $d
+    $c coords $state($path,item) 0 0
+    $c configure -scrollregion \
+        [list 0 0 [image width $state($path,disp)] [image height $state($path,disp)]]
+    if {[info exists state($path,onchange)] && $state($path,onchange) ne ""} {
+        uplevel #0 [list {*}$state($path,onchange) $path]
+    }
+}
+proc ::tkutils::tkuimage::_cleanup {path w} {
+    variable state
+    if {$w ne $path} { return }
+    catch {image delete $state($path,orig)}
+    catch {image delete $state($path,disp)}
+    array unset state $path,*
+}
+
+package provide tkutils::tkuimage 0.2

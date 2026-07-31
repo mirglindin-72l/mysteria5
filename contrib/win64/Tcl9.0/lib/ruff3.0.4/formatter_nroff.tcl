@@ -1,0 +1,689 @@
+# Copyright (c) 2021-2026, Ashok P. Nadkarni
+# All rights reserved.
+# See the file LICENSE in the source root directory for license.
+
+# Ruff! formatter for nroff
+
+namespace eval ruff::formatter {}
+
+oo::class create ruff::formatter::Nroff {
+    superclass ::ruff::formatter::Formatter
+
+    # Data members
+    variable DocumentNamespace; # Namespace being documented
+    variable Header;          # Common header for all pages
+    variable PageTitle;       # Page title - first line of man page
+    variable Synopsis;        # Holds the synopsis
+    variable Body;            # Main content
+    variable Footer;          # Common footer
+    variable HeaderLevels;    # Header levels for various headers
+    variable SeeAlso;         # The See also section
+
+    variable Indentation; # How much to indent in nroff units
+
+    constructor args {
+        namespace path [linsert [namespace path] 0 ::ruff::formatter::nroff]
+        set HeaderLevels {
+            class 3
+            proc 4
+            classmethod 4
+            method 4
+            nonav 5
+            parameters 5
+        }
+        set Indentation 4n
+        next {*}$args
+    }
+
+    method SupportsReferences {} {return false}
+    method CollectReferences args {}
+    method CollectHeadingReference args {}
+    method CollectFigureReference args {}
+    export CollectFigureReference
+
+    method Begin {} {
+        # Implements the [Formatter.Begin] method for nroff.
+
+        next
+
+        # Generate the header used by all files
+        # Currently, it is empty but might change in the future with
+        # support for specific dialects which implement metainformation.
+        set Header ""
+
+        append Header [nr_comment "\n"]
+        if {[my Option? -copyright copyright]} {
+            append Header [nr_comment "Copyright (c) [my Escape $copyright]\n"]
+        }
+
+        # Generate the Footer used by all files
+        set Footer ""
+        return
+    }
+
+    method DocumentBegin {ns} {
+        # See [Formatter.DocumentBegin].
+        # ns - Namespace for this document.
+        set ns [string trimleft $ns :]
+
+        next $ns
+
+        set DocumentNamespace $ns
+        set Body ""
+        set Synopsis ""
+        set SeeAlso ""
+
+        return
+    }
+
+    method DocumentEnd {} {
+        # See [Formatter.DocumentEnd].
+
+        set title [my Option -title]
+        set section [my Option -section 3tcl]
+        set version [my Option -version 0.0]
+        set product [my Option -product $DocumentNamespace]
+        if {$DocumentNamespace eq ""} {
+            set header_left $product
+        } else {
+            set header_left $DocumentNamespace
+        }
+        set PageTitle [nr_title "\"$header_left\" $section $version \"$product\" \"$title\""]
+
+        # Add the navigation bits and footer
+        append doc $Header $PageTitle
+        append doc [nr_section NAME] \n
+        if {$DocumentNamespace eq ""} {
+            append doc "Introduction - $title"
+        } else {
+            append doc "$DocumentNamespace - Commands in namespace $DocumentNamespace"
+        }
+        if {$Synopsis ne ""} {
+            append doc [nr_section SYNOPSIS] \n $Synopsis
+        }
+        append doc $Body
+        if {$SeeAlso ne ""} {
+            append doc [nr_section "SEE ALSO"] $SeeAlso
+        }
+        append doc $Footer
+        set doc [nroff_postprocess $doc]
+
+        next
+
+        return $doc
+    }
+
+    method AddAnchor {anchor} {
+        # Adds an anchor (link target) to the document 
+        #  anchor - The anchor id to add
+        #
+        return ""; # No navigation in nroff
+    }
+
+    method AddProgramElementHeading {type fqn {tooltip {}} {synopsis {}}} {
+        # Adds heading for a program element like procedure, class or method.
+        #  type - One of `proc`, `class` or `method`
+        #  fqn - Fully qualified name of element.
+        #  tooltip - The tooltip lines, if any. Ignore for nroff output.
+        set level [dict get $HeaderLevels $type]
+        set ns    [namespace qualifiers $fqn]
+        set name  [namespace tail $fqn]
+        append Body [nr_p] [nr_inn -$Indentation] \n [nr_bldr $name]
+        if {[string length $ns]} {
+            append Body " ($ns)"
+            #append Body [nr_p] [nr_inn -$Indentation] \n [nr_bldr $name] " ($ns)"
+        } else {
+            #append Body [nr_p] [nr_inn -$Indentation] \n [nr_bldr $name]
+        }
+        append Body [nr_out]
+
+        if {[llength $synopsis]} {
+            foreach {cmds params} $synopsis {
+                set line "[nr_bldp [join $cmds { }]]"
+                if {[llength $params]} {
+                    append line " " [nr_ulp [join $params { }]] 
+                }
+                append Synopsis $line [nr_br]
+            }
+        } elseif {$type eq "class"} {
+            # Classes without constructors will not have a synopsis
+            # Make one up
+            if {[llength [info class constructor $fqn]] == 0} {
+                append Synopsis [nr_bldp "$name create OBJNAME"] [nr_br]
+                append Synopsis [nr_bldp "$name new"] [nr_br]
+            }
+        }
+        return
+    }
+
+    method AddHeading {level text scope {tooltip {}}} {
+        # See [Formatter.AddHeading].
+        #  level   - The numeric or semantic heading level.
+        #  text    - The heading text.
+        #  scope   - The documentation scope of the content.
+        #  tooltip - Tooltip to display in navigation link.
+
+        if {![string is integer -strict $level]} {
+            set level [dict get $HeaderLevels $level]
+        }
+
+        # TBD - should $text really be passed through FormatInline? In particular do
+        # commands like .SH accept embedded escapes ?
+        set text [my FormatInline $text $scope]
+        if {$level < 3} {
+            append Body [nr_section $text]
+        } elseif {$level == 3} {
+            append Body [nr_subsection $text]
+        } else {
+            append Body [nr_p] [nr_bldr $text]
+        }
+        return
+    }
+
+    method MarkupInlineHtml {html} {
+        # Returns markup to pass inline HTML.
+        #  html - HTML text to inline
+        # Nroff does not support inline HTML so logged and ignored.
+        app::log_error "Warning: [info object class [self object]] does not support inline HTML. Ignored."
+        return ""
+    }
+
+    method AddParagraph {lines scope} {
+        # See [Formatter.AddParagraph].
+        #  lines  - The paragraph lines.
+        #  scope - The documentation scope of the content.
+        append Body [nr_p] [my FormatInline [join $lines \n] $scope]
+        return
+    }
+
+    method AddBlockquote {lines scope} {
+        # See [Formatter.AddBlockquote].
+        #  lines  - The paragraph lines.
+        #  scope - The documentation scope of the content.
+
+        # Paragraphs may be separated by blanks lines within
+        # a single block quote
+
+        append Body [nr_inn +4]
+        foreach line $lines {
+            if {[string trim $line] eq ""} {
+                if {[info exists para]} {
+                    my AddParagraph $para $scope
+                    unset para
+                }
+            } else {
+                lappend para $line
+            }
+        }
+        if {[info exists para]} {
+            my AddParagraph $para $scope
+        }
+
+        append Body [nr_inn -4]
+
+    }
+
+    method AddDefinitions {definitions scope {preformatted none}} {
+        # See [Formatter.AddDefinitions].
+        #  definitions  - List of definitions.
+        #  scope        - The documentation scope of the content.
+        #  preformatted - One of `none`, `both`, `term` or `definition`
+        #                 indicating which fields of the definition are
+        #                 are already formatted.
+
+        # Note: CommonMark does not recognize tables without a heading line
+        # TBD - how do empty headers look in generated HTML?
+        set autopunctuate [my Option -autopunctuate 0]
+        append Body [nr_inn $Indentation]
+        foreach item $definitions {
+            set def [join [dict get $item definition] " "]
+            if {$autopunctuate} {
+                set def [string toupper $def 0 0]
+                if {[regexp {[[:alnum:]]} [string index $def end]]} {
+                    append def "."
+                }
+            }
+            if {$preformatted in {none term}} {
+                set def [my FormatInline $def $scope]
+            }
+            set term [dict get $item term]
+            if {$preformatted in {none definition}} {
+                set term [my FormatInline $term $scope]
+            }
+            append Body [nr_blt $term] "\n" $def
+        }
+        append Body [nr_out]
+
+        return
+    }
+
+    method AddTable {table scope} {
+        # Adds a table to document content.
+        #  table  - Dictionary describing table
+        #  scope  - The documentation scope of the content.
+        # See [Formatter.AddTable].
+        # The table dictionary has keys `lines`, `rows` and optionally `header`,
+        # `alignments` containing the raw lines, a list of cell content, header row,
+        # and a list of cell alignments respectively.
+        #
+        # Tables are exported using .TS macros which require `tbl` support.
+
+        set rows [dict get $table rows]
+
+        # Need to find a separator character that does not occur in the text
+        # Pipe character repeated as first choice and last resort
+        foreach sep {| : ^ % ! |} {
+            if {[string first $sep $rows] < 0} {
+                break
+            }
+        }
+
+        if {[dict exists $table header]} {
+            set header [dict get $table header]
+            set ncols [llength $header]
+        } else {
+            set ncols [llength [lindex $rows 0]]
+        }
+
+        if {[dict exists $table alignments]} {
+            set tbl_alignments {}
+            foreach align [dict get $table alignments] {
+                switch $align {
+                    left   {lappend tbl_alignments l}
+                    center {lappend tbl_alignments c}
+                    right  {lappend tbl_alignments r}
+                    default  {lappend tbl_alignments l}
+                }
+            }
+        } else {
+            set tbl_alignments [lrepeat $ncols l]
+        }
+
+        append Body [nr_ts] \n
+        append Body "tab($sep) box;" \n
+        append Body "[join $tbl_alignments][nr_period]" \n
+        if {[info exists header]} {
+            append Body [join [lmap cell $header {
+                my FormatInline $cell $scope
+            }] $sep] \n
+            append Body _ \n; # Horizontal rule
+        }
+        foreach row $rows {
+            append Body [join [lmap cell $row {
+                my FormatInline $cell $scope
+            }] $sep] \n
+        }
+        append Body [nr_te] \n
+        return
+    }
+
+    method AddBullets {content scope} {
+        # See [Formatter.AddBullets].
+        #  content  - Dictionary with keys items and marker
+        #  scope    - The documentation scope of the content.
+
+        if {[dict get $content marker] eq "1."} {
+            if {1} {
+                set n 0
+                foreach lines [dict get $content items] {
+                    append Body [nr_enum [incr n]] \n [my FormatInline [join $lines { }] $scope] \n
+                }
+
+            } else {
+                append Body ".nr Li 0\n.in +4\n.ta 2\n\n"
+                foreach lines [dict get $content items] {
+                    append Body ".ti -4\n.nr Li +1\n" \
+                        "\\t\\n\[Li\]. [my FormatInline [join $lines \n] $scope]\n" \
+                        ".br\n"
+                }
+                append Body ".in -4"
+            }
+        } else {
+            foreach lines [dict get $content items] {
+                append Body [nr_blt "\n\1\\(bu"] "\n" [my FormatInline [join $lines { }] $scope]
+            }
+        }
+        return
+    }
+
+    method AddPreformattedText {text scope} {
+        # See [Formatter.AddPreformattedText].
+        #  text  - Preformatted text.
+        #  scope - The documentation scope of the content.
+
+        append Body [nr_p] [nr_inn $Indentation] [nr_nofill]  \n
+        append Body $text
+        append Body [nr_fill] [nr_out]
+        return
+    }
+
+    method AddFenced {lines fence_options scope} {
+        # See [Formatter.AddFenced].
+        # Adds a list of fenced lines to document content.
+        #  lines - Preformatted text as a list of lines.
+        #  fence_options - options specified with the fence, e.g. diagram ...
+        #  scope - The documentation scope of the content.
+        # Only obeys -caption option, ignores all else
+        append Body [nr_p] [nr_inn $Indentation] [nr_nofill]  \n
+        append Body [join $lines \n]
+        if {[dict exists $fence_options -caption]} {
+            append Body \n\n [nr_ulp [dict get $fence_options -caption]] \n
+        }
+        append Body [nr_fill] [nr_out]
+        return
+    }
+
+    method AddSynopsis {synopsis scope} {
+        # Adds a synopsis for a command
+        #  synopsis - List of alternating elements comprising the command portion
+        #             and the parameter list for it.
+        #  scope  - The documentation scope of the content.
+
+        # Do not confuse this synopsis with the synopsis section!
+
+        append Body [nr_inn $Indentation] \n; # Indent the synopsis
+        foreach {cmds params} $synopsis {
+            set line "[nr_bldp [join $cmds { }]]"
+            if {[llength $params]} {
+                append line " " [nr_ulp [join $params { }]] 
+            }
+            append Body $line [nr_br]
+        }
+        append Body [nr_out] \n
+        return
+    }
+
+    method Navigation {{highlight_ns {}}} {
+        return
+    }
+
+    method Escape {s} {
+        # Escapes special characters in nroff.
+        #  s - string to be escaped
+        # Protects characters in $s against interpretation as
+        # nroff special characters.
+        #
+        # Returns the escaped string
+
+        # This formatter (cloned from tcllib) works differently in that
+        # escaping is done separately as pre- and post-processing steps
+        return $s
+    }
+
+
+    method ProcessEmphasis {text delim scope} {
+        # Returns markup for emphasized text.
+        #  text - string to be emphasized
+        #  delim - one of `*`, `**` or `***` indicating level of emphasis
+        #  scope - Documentation scope for resolving references.
+        #
+
+        # Note: reST does not support ***. Treat as **
+        if {$delim eq "***"} {
+            set delim "**"
+        }
+        switch -exact $delim {
+            *  {
+                return [string cat [nr_ul] [my FormatInline $text $scope] [nr_fpop]]
+            }
+            ** {
+                return [string cat [nr_bld] [my FormatInline $text $scope] [nr_fpop]]
+            }
+            default {
+                error "Invalid emphasis delimiter length [string length $delim]."
+            }
+        }
+    }
+
+    method ProcessLiteral {text} {
+        # Returns markup for literal text.
+        #  text - string to be formatted as a literal
+
+        return $text
+    }
+
+    method ProcessInlineLink {url text title scope {link_type {}}} {
+        # Returns the markup for URL links
+        #  url - the URL to link to
+        #  text - the link text
+        #  title - not used
+        #  scope - not used
+        #  link_type - not used
+
+        set url [string trim $url {<> }]
+        set text [my FormatInline $text $scope]
+
+        # TBD - some nroff version support urls using .UR
+        if {$url ne "" && $text ne $url} {
+            return [string cat [nr_ulr $text] " \[URL: $url\]"]
+        } else {
+            return [nr_ulr $text]
+        }
+    }
+
+    method ProcessInlineImage {url text title scope {link_type {}}} {
+        # Returns a RST link to the image url and registers it as a substitution
+        #  url - the URL to link to
+        #  text - the link text
+        #  title - not used
+        #  scope - not used
+        #  link_type - not used
+        app::log_error "Warning: Image URL $url found. Images are not supported for Nroff output."
+        return [string cat $text " \[Image: $url\]"]
+    }
+
+    method ProcessComment {text} {
+        # Returns the markup for a comment.
+        #
+        return [nr_comment $text]
+    }
+
+    method ProcessVariable {text} {
+        # Returns the markup for a variable name
+        #
+        # The default implementation assumes HTML output format. Derived classes
+        # can override the method.
+        return [nr_ulr $text]
+    }
+
+    method extension {} {
+        # Returns the default file extension to be used for output files.
+        return 3tcl
+    }
+
+}
+
+# MODFIED/ADAPTED From tcllib - BSD license.]
+namespace eval ruff::formatter::nroff {
+    # -*- tcl -*-
+    #
+    # -- nroff commands
+    #
+    # Copyright (c) 2003-2019 Andreas Kupries <andreas_kupries@sourceforge.net>
+
+    ################################################################
+    # nroff specific commands
+    #
+    # All dot-commands (f.e. .PP) are returned with a leading \n\1,
+    # enforcing that they are on a new line and will be protected as markup.
+    # Any empty line created because of this is filtered out in the 
+    # post-processing step.
+
+
+    proc nr_lp      {}          {return \n\1.LP}
+    proc nr_ta      {{text {}}} {return "\n\1.ta$text"}
+    proc nr_bld     {}          {return \1\\fB}
+    proc nr_bldt    {t}         {return "\n\1.B $t\n"}
+    proc nr_bldr    {t}         {return \1\\fB$t[nr_rst]}
+    proc nr_bldp    {t}         {return \1\\fB$t[nr_fpop]}
+    proc nr_ul      {}          {return \1\\fI}
+    proc nr_ulr     {t}         {return \1\\fI$t[nr_fpop]}
+    proc nr_ulp     {t}         {return \1\\fI$t[nr_fpop]}
+    proc nr_rst     {}          {return \1\\fR}
+    proc nr_fpop    {}          {return \1\\fP}
+    proc nr_p       {}          {return \n\1.PP\n}
+    proc nr_comment {text}      {return "\1'\1\\\" [join [split $text \n] "\n\1'\1\\\" "]"} ; # "
+    proc nr_enum    {num}       {nr_item " \[$num\]"}
+    proc nr_item    {{text {}}} {return "\n\1.IP$text"}
+    proc nr_vspace  {}          {return \n\1.sp\n}
+    proc nr_br      {}          {return \n\1.br\n}
+    proc nr_blt     {text}      {return "\n\1.TP\n$text"}
+    proc nr_bltn    {n text}    {return "\n\1.TP $n\n$text"}
+    proc nr_in      {}          {return \n\1.RS}
+    proc nr_inn     {n}         {return "\n\1.RS $n"}
+    proc nr_out     {}          {return \n\1.RE}
+    proc nr_nofill  {}          {return \n\1.nf}
+    proc nr_fill    {}          {return \n\1.fi}
+    proc nr_title   {text}      {return "\n\1.TH $text"}
+    proc nr_include {file}      {return "\n\1.so $file"}
+    proc nr_bolds   {}          {return \n\1.BS}
+    proc nr_bolde   {}          {return \n\1.BE}
+    proc nr_read    {fn}        {return [nroffMarkup [dt_read $fn]]}
+    proc nr_cs      {}          {return \n\1.CS\n}
+    proc nr_ce      {}          {return \n\1.CE\n}
+    proc nr_ts      {}          {return \n\1.TS}
+    proc nr_te      {}          {return \n\1.TE}
+    proc nr_period  {}          {return \1.}
+
+    proc nr_section {name} {
+        if {![regexp {[ 	]} $name]} {
+            return "\n\1.SH [string toupper $name]"
+        }
+        return "\n\1.SH \"[string toupper $name]\""
+    }
+    proc nr_subsection {name}   {
+        if {![regexp {[ 	]} $name]} {
+            return "\n\1.SS [string toupper $name]"
+        }
+        return "\n\1.SS \"[string toupper $name]\""
+    }
+
+
+    ################################################################
+
+    # Handling of nroff special characters in content:
+    #
+    # Plain text is initially passed through unescaped;
+    # internally-generated markup is protected by preceding it with \1.
+    # The final PostProcess step strips the escape character from
+    # real markup and replaces unadorned special characters in content
+    # with proper escapes.
+    #
+
+    variable   markupMap
+    set      markupMap [list \
+                            "\\"   "\1\\" \
+                            "'"    "\1'" \
+                            "."    "\1." \
+                            "\\\\" "\\"]
+    variable   finalMap
+    set      finalMap [list \
+                           "\1\\" "\\" \
+                           "\1'"  "'" \
+                           "\1."  "." \
+                           "."    "\\&." \
+                           "\\"   "\\\\"]
+    variable   textMap
+    set      textMap [list "\\" "\\\\"]
+
+
+    proc nroffEscape {text} {
+        variable textMap
+        return [string map $textMap $text]
+    }
+
+    # markup text --
+    #	Protect markup characters in $text.
+    #	These will be stripped out in PostProcess.
+    #
+    proc nroffMarkup {text} {
+        variable markupMap
+        return [string map $markupMap $text]
+    }
+
+    proc nroff_postprocess {nroff} {
+        variable finalMap
+
+        # Postprocessing final nroff text.
+        # - Strip empty lines out of the text
+        # - Remove leading and trailing whitespace from lines.
+        # - Exceptions to the above: Keep empty lines and leading
+        #   whitespace when in verbatim sections (no-fill-mode)
+
+        set nfMode   [list \1.nf \1.CS]	; # commands which start no-fill mode
+        set fiMode   [list \1.fi \1.CE]	; # commands which terminate no-fill mode
+        set lines    [list]         ; # Result buffer
+        set verbatim 0              ; # Automaton mode/state
+
+        foreach line [split $nroff "\n"] {
+            #puts_stderr |[expr {$verbatim ? "VERB" : "    "}]|$line|
+
+            if {!$verbatim} {
+                # Normal lines, not in no-fill mode.
+
+                if {[lsearch -exact $nfMode [split $line]] >= 0} {
+                    # no-fill mode starts after this line.
+                    set verbatim 1
+                }
+
+                # Ensure that empty lines are not added.
+                # This also removes leading and trailing whitespace.
+
+                if {![string length $line]} {continue}
+                set line [string trim $line]
+                if {![string length $line]} {continue}
+
+                if {[regexp {^\x1\\f[BI]\.} $line]} {
+                    # We found confusing formatting at the beginning of
+                    # the current line. We lift this line up and attach it
+                    # at the end of the last line to remove this
+                    # irregularity. Note that the regexp has to look for
+                    # the special 0x01 character as well to be sure that
+                    # the sequence in question truly is formatting.
+                    # [bug-3601370] Only lift & attach if last line is not
+                    # a directive
+
+                    set last  [lindex   $lines end]
+                    if { ! [string match "\1.*" $last] } {
+                        #puts_stderr \tLIFT
+                        set lines [lreplace $lines end end]
+                        set line "$last $line"
+                    }
+                } elseif {[string match {[']*} $line]} {
+                    # Apostrophes at the beginning of a line have to be
+                    # quoted to prevent misinterpretation as comments.
+                    # The true comments and are quoted with \1 already and
+                    # will therefore not detected by the code here.
+                    # puts_stderr \tQUOTE
+                    set line \1\\$line
+                } ; # We are not handling dots at the beginning of a line here.
+                #   # We are handling them in the finalMap which will quote _all_
+                #   # dots in a text with a zero-width escape (\&).
+            } else {
+                # No-fill mode. We remove trailing whitespace, but keep
+                # leading whitespace and empty lines.
+
+                if {[lsearch -exact $fiMode [split $line]] >= 0} {
+                    # Normal mode resumes after this line.
+                    set verbatim 0
+                }
+                set line [string trimright $line]
+            }
+            lappend lines $line
+        }
+
+        set lines [join $lines "\n"]
+
+        # Now remove all superfluous .IP commands (empty paragraphs). The
+        # first identity mapping is present to avoid smashing a man macro
+        # definition.
+
+        lappend map	\n\1.IP\n\1.\1.\n  \n\1.IP\n\1.\1.\n
+        lappend map \n\1.IP\n\1.       \n\1.
+
+        set lines [string map $map $lines]
+
+        # Return the modified result buffer
+        return [string trim [string map $finalMap $lines]]\n
+    }
+}

@@ -1,0 +1,673 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="title" content="mndoc::mndoc 0.15.1">
+<meta name="author" content="Detlef Groth, University of Potsdam, Germany">
+    
+<title>mndoc::mndoc 0.15.1</title>
+    
+                                      <link rel="stylesheet" href="https://unpkg.com/@highlightjs/cdn-assets@11.9.0/styles/atom-one-light.min.css">
+                                      <script src="https://unpkg.com/@highlightjs/cdn-assets@11.9.0/highlight.min.js"></script>
+                                      <!-- tcl must be loaded extra -->
+                                      <script src="https://unpkg.com/@highlightjs/cdn-assets@11.9.0/languages/tcl.min.js"></script>
+                                      <!-- Initialize highlight.js -->
+                                      <script>hljs.highlightAll();</script>
+       
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script><script>  window.MathJax = {  tex: { inlineMath: [['$', '$'], ['\\(', '\\)']]  } }; </script> 
+
+
+<style>
+@import url("data:text/css;base64,Lyogc3R5bGVzaGVldCBzcGVjaWFsIGZvbnQgc3VwcG9ydCAqLwpAaW1wb3J0IHVybCgnaHR0cHM6Ly9mb250cy5idW5ueS5uZXQvY3NzP2ZhbWlseT1BbmRpa2EmZGlzcGxheT1zd2FwJyk7IApAaW1wb3J0IHVybCgnaHR0cHM6Ly9mb250cy5idW5ueS5uZXQvY3NzP2ZhbWlseT1BbGVvJmRpc3BsYXk9c3dhcCcpOyAKQGltcG9ydCB1cmwoJ2h0dHBzOi8vZm9udHMuYnVubnkubmV0L2Nzcz9mYW1pbHk9VWJ1bnR1K01vbm8mZGlzcGxheT1zd2FwJyk7IC8qICcgKi8KCmJvZHkgewogICAgbWFyZ2luLWxlZnQ6IDEwJTsgbWFyZ2luLXJpZ2h0OiAxMCU7CiAgICBtYXgtd2lkdGg6IDkwJTsKICAgIGZvbnQtZmFtaWx5OiAiQW5kaWthIiwgc2Fucy1zZXJpZjsKfQpwcmUgewogICAgcGFkZGluZy10b3A6CTFleDsKICAgIHBhZGRpbmctYm90dG9tOgkxZXg7CiAgICBwYWRkaW5nLWxlZnQ6CTJleDsKICAgIHBhZGRpbmctcmlnaHQ6CTFleDsKICAgIHdpZHRoOgkJMTAwJTsKICAgIGNvbG9yOiAJCWJsYWNrOwogICAgYmFja2dyb3VuZDogCSNmYWZhZmE7CiAgICBib3JkZXItdG9wOgkJMXB4IHNvbGlkIGJsYWNrOwogICAgYm9yZGVyLWJvdHRvbToJCTFweCBzb2xpZCBibGFjazsKICAgIGZvbnQtZmFtaWx5OiAiVWJ1bnR1IE1vbm8iLCBNb25hY28sIENvbnNvbGFzLCAiTGliZXJhdGlvbiBNb25vIiwgTWVubG8sIENvdXJpZXIsIG1vbm9zcGFjZTsKfQphIHsgdGV4dC1kZWNvcmF0aW9uOiBub25lIH0KcHJlLnN5bm9wc2lzIHsKICAgIGJhY2tncm91bmQ6ICNmYWZhZmE7Cn0KcHJlLmNvZGUgY29kZS50Y2xpbiB7CiAgICBiYWNrZ3JvdW5kLWNvbG9yOiAjZmFmYWZhOwp9CnByZS5jb2RlIGNvZGUudGNsb3V0IHsKICAgIGJhY2tncm91bmQtY29sb3I6ICNmYWZhZmE7Cn0KCmNvZGUgewogIGZvbnQtZmFtaWx5OiAiVWJ1bnR1IE1vbm8iLCBDb25zb2xhcywgIkxpYmVyYXRpb24gTW9ubyIsIE1lbmxvLCBDb3VyaWVyLCBtb25vc3BhY2U7CiAgYmFja2dyb3VuZDogCSNmYWZhZmE7Cn0KaDEsaDIsIGgzLGg0IHsKICAgIGZvbnQtZmFtaWx5OglzYW5zLXNlcmlmOwogICAgYmFja2dyb3VuZDogCXRyYW5zcGFyZW50Owp9CmgxIHsKICAgIHRleHQtYWxpZ246IGNlbnRlcjsKfQoKaDIuYXV0aG9yLCBoMi5kYXRlIHsKICAgIHRleHQtYWxpZ246IGNlbnRlcjsKICAgIGNvbG9yOiBibGFjazsKfQpkaXYudGl0bGUgaDEgewogICAgZm9udC1mYW1pbHk6IHNhbnMtc2VyaWY7CiAgICBiYWNrZ3JvdW5kOiAgdHJhbnNwYXJlbnQ7CiAgICB0ZXh0LWFsaWduOiAgY2VudGVyOwogICAgY29sb3I6ICAgICAgIGJsYWNrOwp9CmRpdi5hdXRob3IgaDMsIGRpdi5kYXRlIGgzIHsKICAgIGZvbnQtZmFtaWx5OglzYW5zLXNlcmlmOwogICAgYmFja2dyb3VuZDogCXRyYW5zcGFyZW50OwogICAgdGV4dC1hbGlnbjoJY2VudGVyOwogICAgY29sb3I6IGJsYWNrIDsKfQpoMiwgaDMgewogICAgbWFyZ2luLXRvcDogIDFlbTsKICAgIGZvbnQtZmFtaWx5OiBzYW5zLXNlcmlmOwogICAgY29sb3I6CSAjMDA1QTlDOwogICAgYmFja2dyb3VuZDogIHRyYW5zcGFyZW50OwogICAgdGV4dC1hbGlnbjoJIGxlZnQ7Cn0KCgo=");
+</style>
+
+
+<style>
+@import url('https://fonts.bunny.net/css?family=Andika&display=swap'); 
+@import url('https://fonts.bunny.net/css?family=Ubuntu+Mono&display=swap');
+body { font-family: Andika, sans-serif ; }
+pre, code { font-family: "Ubuntu Mono", monospaced ; }
+</style>
+    <style>
+           pre, blockquote pre { background: #fafafa !important; }
+           </style>
+           
+</head>
+<body>
+    
+
+
+
+    <div class="document-header">
+<h1 class="title">mndoc::mndoc 0.15.1</h1>
+<h2 class="author">Detlef Groth, University of Potsdam, Germany</h2>
+<h2 class="date">2025-12-01</h2>
+    </div>
+
+<h2>NAME</h2>
+
+<p><strong>mndoc::mndoc</strong>  - Tcl package and command line application to extract and format 
+embedded programming documentation from source code files written in Markdown or
+doctools format and optionally converting it into HTML. The <strong>nmdoc</strong> tool can be as
+well used to convert Markdown files to HTML files and to embed local images and stylesheets into 
+the output document. It supports standard Markdown with a few extensions which are
+explained below.</p>
+
+<h2>USE CASES</h2>
+
+<ul>
+<li>simple install with small file size &lt; 150kb</li>
+<li>extract in source code embedded Markdown documentation</li>
+<li>convert Markdown files to HTML</li>
+<li>embed local images into HTML files</li>
+<li>use provided extensions for better display experiences
+</li></ul>
+
+<h2><a name='toc'></a>TABLE OF CONTENTS</h2>
+
+<ul>
+<li><a href="#synopsis">SYNOPSIS</a></li>
+<li><a href="#description">DESCRIPTION</a></li>
+<li><a href="#command">COMMAND</a></li>
+<li><a href="#example">EXAMPLE</a></li>
+<li><a href="#format">FORMATTING</a>
+<ul>
+<li><a href="#title">Title, Author, Date</a></li>
+<li><a href="#styling">Styling with CSS</a></li>
+<li><a href="#headers">Headers</a></li>
+<li><a href="#lists">Lists</a></li>
+<li><a href="#hyperlinks">Hyperlinks</a></li>
+<li><a href="#indentations">Indentations</a></li>
+<li><a href="#fontstyles">Font styles</a></li>
+<li><a href="#images">Images</a></li>
+<li><a href="#code-blocks">Code Blocks</a></li>
+<li><a href="#equations">Equations</a></li>
+<li><a href="#includes">Includes</a></li></ul>
+
+</li>
+<li><a href="#install">INSTALLATION</a></li>
+<li><a href="#see">SEE ALSO</a></li>
+<li><a href="#changes">CHANGES</a></li>
+<li><a href="#todo">TODO</a></li>
+<li><a href="#authors">AUTHOR</a></li>
+<li><a href="#license">LICENSE AND COPYRIGHT</a>
+</li></ul>
+
+<h2><a name='synopsis'>SYNOPSIS</a></h2>
+
+<p>Usage as package:</p>
+
+<pre class='code'><code>package require mndoc::mndoc
+mndoc::mndoc inputfile outputfile ?--css file1.css,file2.css? \
+   ?--header header.html? ?--footer footer.html? ?--base64 true? ?--bodyonly false?\
+   ?--javascript highlightjs|file1.js,file2.js? ?--mathjax true? ?--refresh 10?</code></pre>
+
+<p>Usage as command line application for extraction of Markdown comments prefixed with <code>#'</code>:</p>
+
+<pre class='code'><code>mndoc inputcodefile outputfile.md ?options?</code></pre>
+
+<p>Usage as command line application for conversion of Markdown to HTML:</p>
+
+<pre class='code'><code>mndoc inputfile.md outputfile.html ?--css file.css,file2.css --header header.html \
+  --footer footer.html --javascript highlighjs|filename1,filename2  --mathjax true \
+  --refresh 10 --base64 true --bodyonly false?  </code></pre>
+
+<h2><a name='description'>DESCRIPTION</a></h2>
+
+<p><strong>mndoc::mndoc</strong>  extracts embedded Markdown or doctools documentation from source code files
+and  as well converts Markdown the output to HTML if desired.
+The documentation inside the source code must be prefixed with the <code>#'</code> character sequence.
+The file extension of the output file determines the output format. 
+File extensions can bei either <code>.md</code> for Markdown output, <code>.man</code> for doctools output or <code>.html</code> for html output.
+The latter requires the tcllib Markdown or the doctools extensions to be installed.
+If the file extension of the inputfile is <em>.md</em> and file extension of the output files is <em>.html</em> 
+there will be simply a conversion from a Markdown to a HTML file.</p>
+
+<p>The file <code>mndoc.tcl</code> can be as well directly used as a console application. 
+An explanation on how to do this, is given in the section <a href="#install">Installation</a>.</p>
+
+<h2><a name='command'>COMMAND</a></h2>
+
+<p><a name="mndoc"> </a>
+<strong>mndoc::mndoc</strong> <em>infile outfile ?--css file.css --header header.html --footer footer.html --mathjax true --refresh 10? </em></p>
+
+<blockquote>
+<p>Extracts the documentation in Markdown format from <em>infile</em> and writes the documentation 
+   to <em>outfile</em> either in Markdown, Doctools  or HTML format.</p>
+
+<ul>
+<li><em>infile</em> - file with embedded markdown documentation</li>
+<li><em>outfile</em> -  name of output file extension</li>
+<li><em>--base64 false|true</em> should local images and CSS files be included, default: true</li>
+<li><em>--css cssfile</em> if outfile is an HTML file use the given <em>cssfile</em>, if the filename is 'mndoc.css' or 'tmdoc.css'
+ and if the file is not yet existing in the appropiate location this file is copied from the package folder at this place<br/></li>
+<li><em>--footer footer.html</em> if outfile is an HTML file add this footer before the closing body tag</li>
+<li><em>--header header.html</em> if outfile is an HTML file add this header after  the opening body tag</li>
+<li><em>--javascript highlighjs|filename1,filename2</em> if outfile is an HTML file embeds either the hilightjs Javascript hilighter or the given local javascript filename(s) </li>
+<li><em>--mathjax false|true</em> should there be the MathJax library included, default: false</li>
+<li><em>--refresh 0|10</em> should there be the autorefresh header included only values above 9 are considered, default: 0</li>
+<li><em>--bodyonly false|true</em> should only the part within the body tags safed to the new file, default: false
+</li></ul>
+
+<p>If the file extension of the outfile is either html or htm a HTML file is created. If the output
+  file has other file extension the documentation after <em>#'</em> comments is simply extracted and stored
+  in the given <em>outfile</em>, <em>-mode</em> flag  (one of -html, -md, -pandoc) is not given, the output format
+  is taken from the file extension of the output file, either <em>.html</em> for HTML or <em>.md</em> for Markdown format.
+  This deduction from the filetype can be overwritten giving either <code>-html</code> or <code>-md</code> as command line flags.
+  If as mode <code>-pandoc</code> is given, the Markdown markup code as well contains the YAML header.
+  If infile has the extension .md (Markdown) or -man (Doctools) than conversion to html will be performed,
+  the outfile file extension In this case must be .html.
+  If output is html a <em>--css</em> flag can be given to use the given stylesheet file instead of the default
+  style sheet embedded within the mndoc code. As well since version 0.8.0 a --header and --footer option
+  is available to add HTML code at the beginning and at the end of the document.</p>
+</blockquote>
+
+<h2><a name='example'>EXAMPLE</a></h2>
+
+<pre class='code'><code>package require mndoc::mndoc
+mndoc::mndoc mndoc.tcl mndoc.html                  ## simple HTML page
+mndoc::mndoc mndoc.tcl mndoc.md                    ## just output a Markdown page
+mndoc::mndoc mndoc.tcl mndoc.html --refresh 20     ## reload HTML page every
+                                                   ## twenty seconds
+mndoc::mndoc mndoc.tcl mndoc.html --mathjax true   ## parse inline equations
+                                                   ## using mathjax library
+mndoc::mndoc sample.html sample-out.html           ## inline images and stylesheets
+                                                   ## into sample-out.html
+mndoc::mndoc header.md header.html --bodyonly true ## no HTML header, no HTML footer</code></pre>
+
+<h2><a name='format'>FORMATTING</a></h2>
+
+<p>For a complete list of Markdown formatting commands consult the basic Markdown syntax at <a href="https://daringfireball.net/projects/markdown/syntax">https://daringfireball.net</a>. 
+Here just the most basic essentials  to create documentation are described.
+Please note, that formatting blocks in Markdown are separated by an empty line, and empty line in this documenting mode is a line prefixed with the <code>#'</code> and nothing thereafter.</p>
+
+<p><a name="title"> <strong>Title, Author and Date</strong></a></p>
+
+<p>Title, author and date can be set at the beginning of the documentation in a so called YAML header. 
+This header will be as well used by the document converter <a href="https://pandoc.org">pandoc</a>  to handle various options for later processing if you extract not HTML but Markdown code from your documentation.</p>
+
+<p>A YAML header starts and ends with three hyphens. Here is the YAML header of this document:</p>
+
+<pre class='code'><code>#' ---
+#' title: mndoc - Markdown extractor and formatter
+#' author: Dr. Detlef Groth, Schwielowsee, Germany
+#' date: 2025-01-04
+#' ---</code></pre>
+
+<p>Those five lines produce the three lines on top of this document. You can extend the header if you would like to process your document after extracting the Markdown with other tools, for instance with Pandoc.</p>
+
+<p><a name="styling"><strong>CSS Styles</strong></a></p>
+
+<p>You can as well specify an other style sheet, than the default by adding
+the following style information:</p>
+
+<pre class='code'><code>#' ---
+#' title: mndoc - Markdown extractor and formatter
+#' author: Dr. Detlef Groth, Schwielowsee, Germany
+#' date: 2024-11-21
+#' css: tufte.css
+#' ---</code></pre>
+
+<p>If you like to change the default font it is recommended to place this informaton 
+either in the css file, or if you like you can add as well a style section to the YAML
+either like in this example:</p>
+
+<pre class='code'><code>#' ---
+#' title: mndoc::mndoc 0.15.1
+#' author: Detlef Groth, University of Potsdam, Germany
+#' date: 2025-11-20
+#' css: mndoc.css
+#' style: |
+#'   @import url('https://fonts.bunny.net/css?family=Andika&amp;display=swap'); 
+#'   @import url('https://fonts.bunny.net/css?family=Ubuntu+Mono&amp;display=swap');
+#'   body { font-family: Andika, sans-serif ; }
+#'   pre, code { font-family: &quot;Ubuntu Mono&quot;, monospaced ; }
+#' ---</code></pre><p>The use of the fonts provided by <a href="https://fonts.bunny.net">https://fonts.bunny.net</a>
+is recommended if you are living in a member state of the European Union.</p>
+
+<p><a name="headers"><strong>Headers</strong></a></p>
+
+<p>Headers are prefixed with the hash symbol, single hash stands for level 1 heading, double hashes for level 2 heading, etc.
+Please note, that the embedded style sheet centers level 1 and level 3 headers, there are intended to be used
+for the page title (h1), author (h3) and date information (h3) on top of the page.</p>
+
+<pre class='code'><code>  #'  ## &lt;a name=&quot;sectionname&quot;&gt;Section title&lt;/a&gt;
+  #'    
+  #'  Some free text that follows after the required empty 
+  #'  line above ...</code></pre>
+
+<p>This produces a level 2 header. Please note, if you have a section name <code>synopsis</code> the code fragments thereafer will be hilighted different than the other code fragments. You should only use level 2 and 3 headers for the documentation. Level 1 header are reserved for the title.</p>
+
+<p><a name="lists"><strong>Lists</strong></a></p>
+
+<p>Lists can be given either using hyphens or stars at the beginning of a line.</p>
+
+<pre class='code'><code>#' - item 1
+#' - item 2
+#' - item 3</code></pre>
+
+<p>Here the output:</p>
+
+<ul>
+<li>item 1</li>
+<li>item 2</li>
+<li>item 3
+</li></ul>
+
+<p>A special list on top of the help page could be the table of contents list. Here is an example:</p>
+
+<pre class='code'><code>#' ## Table of Contents
+#'
+#' - [Synopsis](#synopsis)
+#' - [Description](#description)
+#' - [Command](#command)
+#' - [Example](#example)
+#' - [Authors](#author)</code></pre>
+
+<p>This will produce in HTML mode a clickable hyperlink list. You should however create
+the name targets using html code like so:</p>
+
+<pre><code> &lt;a name='synopsis'&gt;Synopsis2&lt;/a&gt; </code></pre>
+
+<p>Another type of lists are TODO lists. mndoc has limited support for it. They are simple unnested lists starting at the beginning
+of a line with a minus sign folled by either <code>[ ]</code> for a TODO item or a <code>[x]</code> 
+indicator for a done item. Here an example:</p>
+
+<pre class='code'><code> - [ ] Todo item 1
+ - [ ] TODO item 2
+ - [x] DONE item 1
+ - [x] another item which was done already</code></pre>
+
+<p>Here the output:</p>
+
+<ul>
+<li>&#9744 Todo item 1</li>
+<li>&#9744 TODO item 2</li>
+<li>&#9745 DONE item 1</li>
+<li>&#9745 another item which was done already
+</li></ul>
+
+<p><a name="hyperlinks"><strong>Hyperlinks</strong></a></p>
+
+<p>Hyperlinks are written with the following markup code:</p>
+
+<pre class='code'><code>[Link text](URL)</code></pre>
+
+<p>Let's link to the Tcler's Wiki:</p>
+
+<pre class='code'><code>[Tcler's Wiki](https://wiki.tcl-lang.org/)</code></pre>
+
+<p>produces: <a href="https://wiki.tcl-lang.org/">Tcler's Wiki</a></p>
+
+<p><a neme="indentations"><strong>Indentations</strong></a></p>
+
+<p>Indentations are achieved using the greater sign:</p>
+
+<pre class='code'><code>#' Some text before
+#'
+#' &gt; this will be indented
+#'
+#' This will be not indented again</code></pre>
+
+<p>Here the output:</p>
+
+<p>Some text before</p>
+
+<blockquote>
+<p>this will be indented</p>
+</blockquote>
+
+<p>This will be not indented again</p>
+
+<p>Also lists can be indented:</p>
+
+<pre class='code'><code>&gt; - item 1
+  - item 2
+  - item 3</code></pre>
+
+<p>produces:</p>
+
+<blockquote>
+<ul>
+<li>item 1</li>
+<li>item 2</li>
+<li>item 3</li></ul>
+
+
+</blockquote>
+
+<p><a name="fontstyles"><strong>Font Styles</strong></a></p>
+
+<p>Italic font style can be requested by using single stars or underlines at the beginning 
+and at the end of the text. Bold is achieved by dublicating those symbols:
+Monospace font appears within backticks.
+Here an example:</p>
+
+<pre class='code'><code>#' &gt; I am _italic_ and I am __bold__! But I am programming code: `ls -l`</code></pre>
+
+<blockquote>
+<p>I am <em>italic</em> and I am <strong>bold</strong>! But I am programming code: <code>ls -l</code></p>
+</blockquote>
+
+<p><a name="images"><strong>Images</strong></a></p>
+
+<p>If you insist on images in your documentation, images can be embedded in Markdown with a syntax close to links.
+The links here however start with an exclamation mark:</p>
+
+<pre class='code'><code>#' ![image caption](filename.png)</code></pre>
+
+<p>Image attributes like width can be given after the image code like this 
+(ignore the space after the closing parenthesis):</p>
+
+<pre class='code'><code>![dot image](../examples/dot.png){width=&quot;150px&quot;}</code></pre>
+
+<p>Here the output:</p>
+
+<p><img src="data:image/png;base64, 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" width="150px"></img></p>
+
+<p>The source code of mndoc.tcl is a good example for usage of this source code 
+annotation tool. Don't overuse the possibilities of Markdown, sometimes less is more. 
+Write clear and concise, don't use fancy visual effects.</p>
+
+<p><a name="code-blocks"><strong>Code blocks</strong></a></p>
+
+<p>Code blocks can be started using either three or more spaces after the #' sequence 
+or by embracing the code block with triple backticks on top and on bottom. Here an example:</p>
+
+<pre class='code'><code>#' ```
+#' puts &quot;Hello World!&quot;
+#' ```</code></pre>
+
+<p>Here the output:</p>
+
+<pre class='code'><code>puts &quot;Hello World!&quot;</code></pre>
+
+<p>Since version 0.8.0 mndoc as well included the inclusion of Javascript files or libraries like the library 
+<a href="https://highlightjs.org/">highlighjs</a>. Just use the command line or mndoc function argument <code>--javascript highlightjs</code>
+and you get syntax highlighting for code blocks. Here an example:</p>
+
+<pre class='code'><code>#' ```{r} 
+#' test &lt;- function () {
+#'   print(&quot;testig2&quot;)
+#' test();
+#' ```</code></pre>
+
+<p>Output:</p>
+
+<pre class='code'><code class='r'>test &lt;- function () {
+  print(&quot;testig2&quot;)
+test();</code></pre>
+
+<p><a name="equations"><strong>Equations</strong></a></p>
+
+<p>Since version 0.9.0 as well LaTeX equations can be embedded into Markdown documents and are
+rendered using the <a href="https://www.mathjax.org/">MathJax</a> library. Just include either inline 
+equations using parenthesis protected by two backslashes or block equations embedded within
+brackets protected by two backslashes or within two dollar symbols in your Markdown code and use
+the option <code>--mathjax true</code> during document conversion. Here an example for 
+inline equations:</p>
+
+<pre class='code'><code>The  famous  Einstein  equation  \\( E = mc^2 \\) is  probably  the most known
+equation world wide.</code></pre>
+
+<p>And here the output (will not work on http://htmlpreview.github.io/):</p>
+
+<p>The  famous  Einstein  equation  \( E = mc^2 \) is  probably  the most know
+equation world wide.</p>
+
+<p>Block equations should be usually aligned left, like in the
+following examples:</p>
+
+<pre class='code'><code>&lt;div style=&quot;display: flex;&quot;&gt;
+
+$$ \sum_{i=0}^n i^2 = \frac{(n^2+n)(2n+1)}{6} \tag{1} $$
+
+&lt;/div&gt;</code></pre>
+
+<p>And here the output (please note that this <strong>does not work in Github Preview Mode</strong>):</p>
+
+<div style="display: flex;">
+
+$$ \sum_{i=0}^n i^2 = \frac{(n^2+n)(2n+1)}{6} \tag{1} $$
+
+</div>
+
+<p><a name="includes"><strong>Includes</strong></a></p>
+
+<p>mndoc in contrast to standard markdown as well support includes. Using the</p>
+
+<p><code>#' #include &quot;filename.md&quot;</code></p>
+
+<p>syntax it is possible to include other markdown files. 
+This might be useful for instance to include the same 
+header or a footer in a set of related files.</p>
+
+<h2><a name='install'>INSTALLATION</a></h2>
+
+<p>The mndoc::mndoc package can be installed either as command line application or as a Tcl module. 
+It requires the markdown, cmdline, yaml and textutils packages from tcllib to be installed.</p>
+
+<p>Installation as command line application is easiest by executing the following shell one liner:</p>
+
+<pre class='code'><code>/bin/bash -c \
+ &quot;$(curl -fsSL https://github.com/mittelmark/mndoc/releases/latest/download/install-mndoc.sh)&quot;</code></pre>
+
+<p>Alternatively it can be installed by downloading the file 
+<a href="https://github.com/mittelmark/mndoc/releases">mndoc-0.1X.X.bin</a> from the latest release, which
+contains the main script file and all required libraries, to your local machine. The X stands for the current release number. 
+Rename this file to mndoc, make it executable and coy it to a folder belonging to your PATH variable.</p>
+
+<p>Installation as command line application can be as well done by copying the <code>mndoc.tcl</code> as 
+<code>mndoc</code> to a directory which is in your executable path. You should make this file executable using <code>chmod</code>.</p>
+
+<p>Installation as Tcl package by copying the mndoc folder to a folder 
+which is in your library path for Tcl. Alternatively you can install it as Tcl modul by copying it 
+in your module path as <code>mndoc-0.1X.X.tm</code> for instance. See the <a href="https://www.tcl.tk/man/tcl8.6/TclCmd/tm.htm">tm manual page</a></p>
+
+<h2><a name='see'>SEE ALSO</a></h2>
+
+<ul>
+<li><a href="https://github.com/mittelmark/tmdoc">tmdoc</a> for an approach to perform literate programming using Tcl</li>
+<li><a href="https://core.tcl-lang.org/tcllib/doc/trunk/embedded/index.md">tcllib</a> for the original mkdoc package and the 
+  Markdown as well as the textutil packages</li>
+<li><a href="https://pandoc.org">pandoc</a> - am universal document converter</li>
+<li><a href="https://github.com/apnadkarni/ruff">Ruff!</a> Ruff! documentation generator for Tcl using Markdown syntax as well
+</li></ul>
+
+<h2><a name='changes'>CHANGES</a></h2>
+
+<ul>
+<li>2019-11-19 Release 0.1</li>
+<li>2019-11-22 Adding direct conversion from Markdown files to HTML files.</li>
+<li>2019-11-27 Documentation fixes</li>
+<li>2019-11-28 Kit version</li>
+<li>2019-11-28 Release 0.2 to fossil</li>
+<li>2019-12-06 Partial R-Roxygen/Markdown support</li>
+<li>2020-01-05 Documentation fixes and version information</li>
+<li>2020-02-02 Adding include syntax</li>
+<li>2020-02-26 Adding files pandoc.css and dgw.css</li>
+<li>2020-02-26 Adding stylesheet option --css </li>
+<li>2020-02-26 Making standalone file using pkgDeps and mk_tm</li>
+<li>2020-02-26 Release 0.3 to fossil</li>
+<li>2020-02-27 support for __DATE__, __PKGNAME__, __PKGVERSION__ macros  in Tcl code based on package provide line</li>
+<li>2020-09-01 Roxygen2 plugin</li>
+<li>2020-11-09 argument --run supprt</li>
+<li>2020-11-10 Release 0.4</li>
+<li>2020-11-11 command line option  --run with seconds</li>
+<li>2020-12-30 Release 0.5 (rox2md @section support with preformatted, emph and strong/bold)</li>
+<li>2022-02-11 Release 0.6.0 
+<ul>
+<li>parsing yaml header</li>
+<li>workaround for images</li>
+<li>making standalone using tpack.tcl <a href="https://github.com/mittelmark/DGTcl/blob/master/bin/mndoc-0.6.bin">mndoc-0.6.bin</a></li>
+<li>terminal help update and cleanup</li>
+<li>moved to Github in Wiki</li>
+<li>code cleanup</li></ul>
+
+</li>
+<li>2022-04-XX Release 0.7.0
+<ul>
+<li>removing features to simplify the code, so removed plugin support, underline placeholder and sorting facilitites to reduce code size</li>
+<li>creating tcllib compatible manual page</li>
+<li>aku changes and fixes to include mndoc into tcllib's infrastructure</li>
+<li>splitting of command line app to the apps folder</li>
+<li>adding hook package requirement (benefit?)</li>
+<li>changing license to BSD</li></ul>
+
+</li>
+<li>2023-09-07 Release 0.7.1 - image tag fix </li>
+<li>2023-11-17 Release 0.8.0 
+<ul>
+<li>removed hook package, sorry do not understand what it is doing
+   and what is the benefit and I could not extend my code with this </li>
+<li>adding --header and --footer options</li>
+<li>adding --javascript option, single oder multiple files</li>
+<li>extending --css option, single or multiple files</li>
+<li>support for syntax highlighting using hilightjs Javascript</li>
+<li>fixing issues with triple backtick codes, by fixing markdown package
+   (issue is done on tcllib)</li>
+<li>adding example file in examples to show syntax highlighting</li>
+<li>adding Makefile to build standalone application using tpack (80kb)</li></ul>
+
+</li>
+<li>2024-11-16 Release 0.9.0
+<ul>
+<li>support for mathjax</li></ul>
+
+</li>
+<li>2024-11-28 Release 0.10.0
+<ul>
+<li>support for refresh option to autorefresh a HTML page </li>
+<li>removed run support, use pantcl instead</li>
+<li>fixing issues with greater, lower and quote signs in code fragments</li>
+<li>removing inlining external javascript files into HTML output</li>
+<li>adding --base64 option to inline local images and css files</li></ul>
+
+</li>
+<li>2024-11-28 Release 0.10.1
+<ul>
+<li>minor documentation fix</li></ul>
+
+</li>
+<li>2024-12-24 Release 0.10.2
+<ul>
+<li>amp-amp fix for source code blocks</li></ul>
+
+</li>
+<li>2025-01-04 Release 0.11.0
+<ul>
+<li>Tcl 9 support</li></ul>
+
+</li>
+<li>2025-01-04 Release 0.11.1
+<ul>
+<li>fixing outfile ending with Tmd, Rmd etc seen as HTML files</li></ul>
+
+</li>
+<li>2025-01-18 Release 0.11.2
+<ul>
+<li>fixing inline multiple images on the same line</li></ul>
+
+</li>
+<li>2025-01-26 Release 0.11.3
+<ul>
+<li>fixing wrong command line argument crash</li>
+<li>fixing uneven length option list</li></ul>
+
+</li>
+<li>2025-10-16 Release 0.13.0
+<ul>
+<li>renamed to mndoc with version 0.13.0 to avoid name collisions with
+   mkdoc package in tcllib</li></ul>
+
+</li>
+<li>2025-10-23 Release 0.14.0
+<ul>
+<li>adding support for inlining local images and stylesheets into exisiting
+   HTML files</li>
+<li>adding option --bodyonly to omit HTML header and footer as well as body tag</li>
+<li>support for style section in YAML header for instance to install and use Bunny fonts</li>
+<li>support for simple todo lists</li>
+<li>support for image attributes like width</li></ul>
+
+</li>
+<li>2025-10-26 Release 0.14.1
+<ul>
+<li>file application cache file right fix for multiple users on the same machine try to run mndoc</li></ul>
+
+</li>
+<li>2025-10-30 Release 0.14.2
+<ul>
+<li>mathjax inline equations with $ equation $ to avoid backslash issues</li></ul>
+
+</li>
+<li>2025-11-20 Release 0.15.0
+<ul>
+<li>support for &quot;&quot;&quot;#' and /<em></em>#' to start Markdown blocks and &quot;&quot;&quot; */ to end Markdown blocks
+   to document for example the Julia language</li></ul>
+
+</li>
+<li>2025-12-XX Release 0.15.1
+<ul>
+<li>fix for non-existing stylesheet files like mndoc.css or tmdoc.css taking them from the 
+   package folder
+</li></ul>
+
+</li></ul>
+
+<h2><a name='todo'>TODO</a></h2>
+
+<ul>
+<li>&#9745 font embedding using https://european-alternatives.eu/de/produkt/bunny-fonts 
+  currently Ubuntu Mono and Andika are used from there within the default stylesheet (done)</li>
+<li>&#9744 dtplite support ?</li>
+<li>&#9744 inline online images and online stylesheets?
+</li></ul>
+
+<h2><a name='authors'>AUTHOR(s)</a></h2>
+
+<p>The <strong>mndoc::mndoc</strong> package was written by Detlef Groth, University of Potdam, Germany.</p>
+
+<h2><a name='license'>LICENSE AND COPYRIGHT</a></h2>
+
+<p>Markdown extractor and converter mndoc::mndoc, version 0.15.1</p>
+
+<p>Copyright (c) 2019-25  Detlef Groth, E-mail: &lt;dgroth(at)uni(minus)potsdam(dot)de&gt;</p>
+
+<p>BSD License type:</p>
+
+<p>Sun Microsystems, Inc. The following terms apply to all files a ssociated
+with the software unless explicitly disclaimed in individual files.</p>
+
+<p>The authors hereby grant permission to use, copy, modify, distribute, and
+license this software and its documentation for any purpose, provided that
+existing copyright notices are retained in all copies and that this notice
+is included verbatim in any distributions. No written agreement, license,
+or royalty fee is required for any of the authorized uses. Modifications to
+this software may be copyrighted by their authors and need not follow the
+licensing terms described here, provided that the new terms are clearly
+indicated on the first page of each file where they apply.</p>
+
+<p>In no event shall the authors or distributors be liable to any party for
+direct, indirect, special, incidental, or consequential damages arising out
+of the use of this software, its documentation, or any derivatives thereof,
+even if the authors have been advised of the possibility of such damage.</p>
+
+<p>The authors and distributors specifically disclaim any warranties,
+including, but not limited to, the implied warranties of merchantability,
+fitness for a particular purpose, and non-infringement. This software is
+provided on an &quot;as is&quot; basis, and the authors and distributors have no
+obligation to provide maintenance, support, updates, enhancements, or
+modifications.</p>
+
+<p>RESTRICTED RIGHTS: Use, duplication or disclosure by the government is
+subject to the restrictions as set forth in subparagraph (c) (1) (ii) of
+the Rights in Technical Data and Computer Software Clause as DFARS
+252.227-7013 and FAR 52.227-19.</p>
+
+
+
+</body>
+</html>
+

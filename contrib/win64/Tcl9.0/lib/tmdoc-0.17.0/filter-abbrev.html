@@ -1,0 +1,141 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="title" content="filter-abbrev documentation">
+<meta name="author" content="Detlef Groth, University of Potsdam, Germany">
+    
+<title>filter-abbrev documentation</title>
+    
+    
+
+<style>
+@import url("data:text/css;base64,CmJvZHkgewogICAgcGFkZGluZzogMzBweDsKICAgIG1heC13aWR0aDogMTIwMHB4OwogICAgZm9udDogQWxlZ3JleWEsIEdlb3JnaWEsIHNlcmlmOwogICAgd2lkdGg6IDk4MHB4OyBtYXJnaW46IDAgYXV0bzsKfQoKaDEudGl0bGUsIHAuYXV0aG9yLCBwLmRhdGUsIGgyLmF1dGhvciwgaDIuZGF0ZSB7CiAgICB0ZXh0LWFsaWduOiBjZW50ZXI7Cn0KYSB7IHRleHQtZGVjb3JhdGlvbjogbm9uZSA7IH0KcHJlIHsKICAgIHBhZGRpbmc6IDEwcHggOwogICAgYm9yZGVyLXRvcDogMnB4IHNvbGlkICNDQ0NDQ0M7CiAgICBib3JkZXItYm90dG9tOiAycHggc29saWQgI0NDQ0NDQzsgCiAgICBmb250OiBNb25hY28sIG1vbm9zcGFjZTsKfQpwcmU6aGFzKGNvZGUpIHsKICAgIGJhY2tncm91bmQ6ICNlZmVmZWY7Cn0KcHJlOmhhcyhjb2RlLnRjbGNvZGUpIHsKICAgIGJhY2tncm91bmQ6IGNvcm5zaWxrOyAgIAp9CgpwcmU6aGFzKGNvZGUudGNsb3V0KSB7ICAgIAogICAgYmFja2dyb3VuZDogI0NDRUVGRjsKfQpwcmU6aGFzKGNvZGUudGNsZXJyKSB7ICAgIAogICAgYmFja2dyb3VuZDogI0ZGQ0NDQzsKfQpwcmU6aGFzKGNvZGUuZXJyb3IpIHsgICAgCiAgICBiYWNrZ3JvdW5kOiAjRkZDQ0NDOwp9Cgp0YWJsZSB7ICAgIAogIGJvcmRlci1jb2xsYXBzZTogY29sbGFwc2U7CiAgYm9yZGVyLWJvdHRvbTogMnB4IHNvbGlkOwogIGJvcmRlci1zcGFjaW5nOiA1cHg7CiAgbWluLXdpZHRoOiA1MDBweDsKfQp0YWJsZSB0aGVhZCB0ciB0aCB7IAogIGJhY2tncm91bmQtY29sb3I6ICNmZGU5ZDk7CiAgdGV4dC1hbGlnbjogbGVmdDsgCiAgcGFkZGluZzogNXB4OwogIGJvcmRlci10b3A6IDJweCBzb2xpZDsKICBib3JkZXItYm90dG9tOiAycHggc29saWQ7Cn0KdGFibGUgdHIgdGQgeyAKICBiYWNrZ3JvdW5kLWNvbG9yOiAjZjZmNmY2OwogIHRleHQtYWxpZ246IGxlZnQ7IAogIHBhZGRpbmc6IDVweDsKfQoKLyogQWxlcnRzOiAqLwoKLnNpZGUtd2FybmluZywgLnNpZGUtY2F1dGlvbiwgLnNpZGUtaW5mbywgLnNpZGUtcXVlc3Rpb24sIC5zaWRlLWVycm9yLCAuc2lkZS1ub3RlLCAuc2lkZS10aXAsIC5zaWRlLWltcG9ydGFudCB7CiAgY29sb3I6IHZhcigtLXVzZWQtY29sb3IpOwogIG1hcmdpbi1ib3R0b206IDMycHg7CiAgbWFyZ2luLXRvcDogMTZweDsKICBwYWRkaW5nOiAxNnB4OwogIHBhZGRpbmctbGVmdDogNDhweDsKICBib3JkZXItcmFkaXVzOiA1cHggMCAwIDVweDsKICBwb3NpdGlvbjogcmVsYXRpdmU7ICAKfQouc2lkZS1lcnJvciwgLnNpZGUtY2F1dGlvbiB7CiAgYm9yZGVyLWxlZnQ6IHNvbGlkIDdweCAjYWEzMzIyOwogIGJvcmRlci10b3A6IHNvbGlkIDFweCAjZmZmMGYwOyAKICBib3JkZXItcmlnaHQ6IHNvbGlkIDFweCAjZmZmMGYwOyAKICBib3JkZXItYm90dG9tOiBzb2xpZCAxcHggI2ZmZjBmMDsgCiAgYmFja2dyb3VuZC1jb2xvcjogI2ZmZjBmMDsKICAKfQoKLnNpZGUtaW1wb3J0YW50IHsKICBib3JkZXItbGVmdDogc29saWQgN3B4ICNhYTMzYWE7CiAgYm9yZGVyLXRvcDogc29saWQgMXB4ICNmZmYwZmY7IAogIGJvcmRlci1yaWdodDogc29saWQgMXB4ICNmZmYwZmY7IAogIGJvcmRlci1ib3R0b206IHNvbGlkIDFweCAjZmZmMGZmOyAKICBiYWNrZ3JvdW5kLWNvbG9yOiAjZmZmMGZmOwp9Cgouc2lkZS1ub3RlLCAuc2lkZS10aXAgewogIGJvcmRlci1sZWZ0OiBzb2xpZCA3cHggIzIyMzM5OTsKICBib3JkZXItdG9wOiBzb2xpZCAxcHggI2YwZjdmZjsgCiAgYm9yZGVyLXJpZ2h0OiBzb2xpZCAxcHggI2YwZjdmZjsgCiAgYm9yZGVyLWJvdHRvbTogc29saWQgMXB4ICNmMGY3ZmY7IAogIGJhY2tncm91bmQtY29sb3I6ICNmMGY3ZmY7CiAgCn0KCi5zaWRlLWluZm8gewogIGJvcmRlci1sZWZ0OiBzb2xpZCA3cHggIzMzOTkyMjsKICBib3JkZXItdG9wOiBzb2xpZCAxcHggI2Y3ZmZmMDsgCiAgYm9yZGVyLXJpZ2h0OiBzb2xpZCAxcHggI2Y3ZmZmMDsgCiAgYm9yZGVyLWJvdHRvbTogc29saWQgMXB4ICNmN2ZmZjA7IAogIGJhY2tncm91bmQtY29sb3I6ICNmN2ZmZjA7CiAgCn0KLnNpZGUtcXVlc3Rpb24gewogIGJvcmRlci1sZWZ0OiBzb2xpZCA3cHggIzk5OTkyMjsKICBib3JkZXItdG9wOiBzb2xpZCAxcHggI2ZmZmZmMDsgCiAgYm9yZGVyLXJpZ2h0OiBzb2xpZCAxcHggI2ZmZmZmMDsgCiAgYm9yZGVyLWJvdHRvbTogc29saWQgMXB4ICNmZmZmZjA7IAogIGJhY2tncm91bmQtY29sb3I6ICNmZmZmZjA7Cn0KLnNpZGUtd2FybmluZyB7CiAgYm9yZGVyLWxlZnQ6IHNvbGlkIDdweCAjZmY5OTMzOwogIGJvcmRlci10b3A6IHNvbGlkIDFweCAjZmZmN2YwOyAKICBib3JkZXItcmlnaHQ6IHNvbGlkIDFweCAjZmZmN2YwOyAKICBib3JkZXItYm90dG9tOiBzb2xpZCAxcHggI2ZmZjdmMDsgCiAgYmFja2dyb3VuZC1jb2xvcjogI2ZmZjdmMDsKfQoKLnNpZGUtaW5mbzo6YmVmb3JlLCAuc2lkZS13YXJuaW5nOjpiZWZvcmUsIC5zaWRlLWNhdXRpb246OmJlZm9yZSwgLnNpZGUtcXVlc3Rpb246OmJlZm9yZSwgLnNpZGUtZXJyb3I6OmJlZm9yZSwgLnNpZGUtbm90ZTo6YmVmb3JlLCAuc2lkZS10aXA6OmJlZm9yZSwgLnNpZGUtaW1wb3J0YW50OjpiZWZvcmUgewogIGFsaWduLWl0ZW1zOiBjZW50ZXI7CiAgYm9yZGVyLXJhZGl1czogNTAlOwogIGRpc3BsYXk6IGZsZXg7CiAgZm9udC1mYW1pbHk6IG1vbm9zcGFjZTsKICBmb250LXNpemU6IDE2cHg7CiAgZm9udC13ZWlnaHQ6IDcwMDsKICBoZWlnaHQ6IDI0cHg7CiAganVzdGlmeS1jb250ZW50OiBjZW50ZXI7CiAgbGVmdDogMTJweDsKICBsaW5lLWhlaWdodDogMTsKICBwb3NpdGlvbjogYWJzb2x1dGU7CiAgdG9wOiAxNXB4OwogIHdpZHRoOiAyNHB4Owp9Cgouc2lkZS1ub3RlOjpiZWZvcmUsIC5zaWRlLXRpcDo6YmVmb3JlIHsKICBiYWNrZ3JvdW5kLWNvbG9yOiAjMjIzMzk5OwogIGNvbG9yOiAjZmZmOwogIGNvbnRlbnQ6ICJOIjsKICAKfQoKLnNpZGUtaW1wb3J0YW50OjpiZWZvcmUgewogIGJhY2tncm91bmQtY29sb3I6ICM5OTMzOTk7CiAgY29sb3I6ICNmZmY7CiAgY29udGVudDogIiEiOwp9Cgouc2lkZS10aXA6OmJlZm9yZSB7CiAgYmFja2dyb3VuZC1jb2xvcjogIzIyMzM5OTsgCiAgY29udGVudDogIlwyNjFCIjsKICBmb250LXNpemU6IDExMCU7CiAgCn0KCi5zaWRlLWluZm86OmJlZm9yZSB7CiAgYmFja2dyb3VuZC1jb2xvcjogIzMzOTkyMjsKICBjb2xvcjogI2ZmZjsKICBjb250ZW50OiAiaSI7CiAgCn0KLnNpZGUtZXJyb3I6OmJlZm9yZSB7CiAgYmFja2dyb3VuZC1jb2xvcjogI2ZmZjBmMDsKICBjb2xvcjogI2ZmZjsKICBjb250ZW50OiAiXDI2RDQiOwogIGZvbnQtc2l6ZTogMTIwJTsKfQouc2lkZS1jYXV0aW9uOjpiZWZvcmUgewogIGJhY2tncm91bmQtY29sb3I6ICNhYTMzMjI7CiAgY29sb3I6ICNmZmY7CiAgY29udGVudDogIiEiOwp9Cgouc2lkZS1xdWVzdGlvbjo6YmVmb3JlIHsKICBiYWNrZ3JvdW5kLWNvbG9yOiAjOTk5OTIyOwogIGNvbG9yOiAjZmZmOwogIGNvbnRlbnQ6ICI/IjsKICAKfQoKLnNpZGUtd2FybmluZzo6YmVmb3JlIHsKICBiYWNrZ3JvdW5kLWNvbG9yOiAjZGQ2NjIyOwogIGNvbG9yOiAjZmZmOwogIGNvbnRlbnQ6ICIhIjsKICAKfQovKiBmaXggZm9yIEFzY2lpRG9jIHRhYmxlcyB3aXRoIHBhcmFncmFwaHMgKi8KcC50YWJsZWJsb2NrIHsgcGFkZGluZzogMHB4OyBtYXJnaW46IDBweDt9Cg==");
+</style>
+
+    
+</head>
+<body>
+    
+
+
+
+<h1 class="title">filter-abbrev documentation</h1>
+<h2 class="author">Detlef Groth, University of Potsdam, Germany</h2>
+<h2 class="date">2025-10-19</h2>
+
+<hr />
+
+<p><center>
+<a href="filter-octave.html">filter-octave</a>      -  <a href="filter-python.html">filter-python</a>-   <a href="filter-r.html">filter-r</a>     -
+<a href="filter-tcl.html">filter-tcl</a> <br/>
+<a href="filter-abbrev.html">filter-abbrev</a> - <a href="filter-mtex.html">filter-mtex</a> <br/>
+<a href="tmdoc-tutorial.html">tmdoc-tutorial</a>
+</center></p>
+
+<hr />
+
+<h2>Name</h2>
+
+<p><em>filter-abbrev</em> - tmdoc Filter which can be used to embed abbreviations placed
+within a pair of curly braces into
+your text documents and expand them based on your abbreviation lists which can
+be either defined in the YAML header or within an YAML abbreviation file which
+must be then declared in the YAML header.</p>
+
+<h2>Usage</h2>
+
+<p>Abbreviations are defined within the YAML header or within YAML files. Here an
+example:</p>
+
+<pre class='code'><code>---
+title: This is a title
+author: Max Musterman
+date: 2025-01-01 10:00
+UM: University of Mustercity
+abbreviations: file.yml
+---
+
+In the text you can embed the abbreviations like this. In this article by
+{author} from {UM}.</code></pre>
+
+<p>The file <em>file.yml</em> can contain as well abbreviations. Multiline abbreviations
+can be defined like this:</p>
+
+<pre class='code'><code>lipsum: &gt;
+    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod
+    tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim
+    veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea
+    commodo consequat. Duis aute irure dolor in reprehenderit in voluptate
+    velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat
+    cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id
+    est laborum.</code></pre>
+
+<p>Here an example on how to use the abbreviations for UM and lipsum:</p>
+
+<pre class='code'><code>I was  studying at {UM} where I learned to write  Lipsum text. Here an example
+of Lipsum  text:
+
+&gt; _{lipsum}_</code></pre>
+
+<p>The output is then this:</p>
+
+<p>I was  studying at University of Mustercity where I learned to write  Lipsum text. Here an example
+of Lipsum  text:</p>
+
+<blockquote>
+<p><em>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+</em></p>
+</blockquote>
+
+<h2>Document Conversion</h2>
+
+<p>The  conversion of the Markdown  documents  containing the  abbreviations  via
+tmdoc/mkdoc should be done as follows:</p>
+
+<pre class='code'><code>tmdoc --mode weave filename.tmd - | \
+    mkdoc - filename.html --css tmdoc.css</code></pre>
+
+<h2>Author and Copyright</h2>
+
+<p>Detlef Groth, University of Potsdam, Germany</p>
+
+<h2>License</h2>
+
+<pre class='code'><code>BSD 3-Clause License
+
+Copyright (c) 2022-2025, Detlef Groth, University of Potsdam
+
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this
+   list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+
+3. Neither the name of the copyright holder nor the names of its
+   contributors may be used to endorse or promote products derived from
+   this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot;
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</code></pre>
+
+
+
+</body>
+</html>
+
