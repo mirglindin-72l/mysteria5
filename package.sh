@@ -17,6 +17,7 @@ rm -rf ./package/mysteria5/.git
 pushd ./package
 #zip -r ./mysteria5_`date +%d%m%Y`.zip ./mysteria5
 7z a -v16m ./mysteria5_`date +%d%m%Y`.7z ./mysteria5
+7z a ./mysteria5_`date +%d%m%Y`.7z ./mysteria5
 popd ./package
 
 echo "For this package to be usable,"

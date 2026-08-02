@@ -25,7 +25,11 @@ you need to add some other peers by I2P destinations. extended mode of the main 
 state) or paste someone else's.
 
 then one can create and add groups, or add contacts. contacts can be either similarly
-copied/pasted, or search via DHT in directory, same with groups.
+copied/pasted, or searched via DHT in directory, same with groups.
+
+group requests and contact requests windows are intended for accepting requests to write to us directly
+or to join our group initially. (don't remember if the latter still works or was completely replaced with
+control rules)
 
 there's mail, chat, versioned documents and almost nonexistent voice calls.
 
