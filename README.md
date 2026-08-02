@@ -1,6 +1,6 @@
 # mysteria5
 
-A P2P messenger, mostly written in TCL scripting language with some C (critcl) wrappers
+A P2P messenger, mostly written in TCL scripting language with some C (initially critcl, now shlibs) wrappers
 for outside libraries.
 
 i2pd, tcl/tk, libsodium, portaudio, libopus are used, of other things.
@@ -12,13 +12,11 @@ to run, use ./mysteria for MacOS (and Linux, but not checked to work lately) and
 
 the package.sh script can be used to package only necessary things.
 
-since it uses critcl, aforementioned libraries have to be installed for it to work under
+aforementioned libraries have to be installed for it to work under
 MacOS or Linux. an I2P router has to be running with SAM enabled.
 
-for Windows, if you don't use critcl cache blobs from the repo, a compiler has to be
-installed and in path to build new critcl cache dlls. similarly to that dll blobs of used
-libraries from the repo can be replaced with ones locally built, but that's not described
-here.
+for Windows, dll blobs of used libraries from the repo can be replaced with ones locally built,
+but that's not described here.
 
 ## using it
 
@@ -47,3 +45,7 @@ versioned documents are in a very basic stage.
 this is a very personal project, terribly clumsy and emotionally important.
 there's plenty of unused code, bad code, commented out and left in place code, duplicate code
 and code clearly outrageous for anyone who worked as a programmer. sorry.
+
+## building
+
+run `tclsh build_wrappers.tcl` ; to package some sort of ready Windows version, run `package.sh`

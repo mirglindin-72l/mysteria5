@@ -18,11 +18,6 @@ package require tcl::chan::random
 #package require tdom
 package require msgcat
 
-#source "./contrib/tinyaes_wrapper.tcl"
-#source "./contrib/sodium_wrapper.tcl"
-#source "./contrib/portaudio_wrapper.tcl"
-#source "./contrib/opus_wrapper.tcl"
-
 source "./fifo_fix.tcl"
 #source "./myrb.tcl"
 source "./log.tcl"
