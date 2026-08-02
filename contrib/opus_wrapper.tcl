@@ -1,8 +1,8 @@
 package require critcl
 
-if {![critcl::compiling]} {
-	error {critcl found no compiler}
-}
+#if {![critcl::compiling]} {
+#	error {critcl found no compiler}
+#}
 
 namespace eval ::opus {
 	variable bindingsVersion 999;
@@ -295,5 +295,7 @@ critcl::load
 
 
 #::opus::test 48000 1
+
+package provide opus 69
 
 #vwait forever

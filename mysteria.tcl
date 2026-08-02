@@ -1,8 +1,8 @@
 package require critcl
 package require tcllibc
 package require Tcl
-package require sha1
-package require pki
+#package require sha1
+#package require pki
 #package require aes
 #package require udp
 package require Tk
@@ -18,9 +18,15 @@ package require tcl::chan::random
 #package require tdom
 package require msgcat
 
+#source "./contrib/tinyaes_wrapper.tcl"
+#source "./contrib/sodium_wrapper.tcl"
+#source "./contrib/portaudio_wrapper.tcl"
+#source "./contrib/opus_wrapper.tcl"
+
 source "./fifo_fix.tcl"
 #source "./myrb.tcl"
 source "./log.tcl"
+source "./wrappers.tcl"
 source "./bin.tcl"
 #source "./tree.tcl"
 source "./gfiles.tcl"
@@ -28,12 +34,6 @@ source "./audio.tcl"
 source "./gr.tcl"
 source "./wid.tcl"
 source "./i2p.tcl"
-source "./contrib/tinyaes_wrapper.tcl"
-source "./contrib/portaudio_wrapper.tcl"
-source "./contrib/opus_wrapper.tcl"
-#source "./contrib/queue_wrapper.tcl"
-source "./contrib/sodium_wrapper.tcl"
-#source "./contrib/imgscale_wrapper.tcl"
 source "./crypto.tcl"
 source "./offline.tcl"
 source "./mysm.tcl"

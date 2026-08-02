@@ -1,8 +1,8 @@
 package require critcl
 
-if {![critcl::compiling]} {
-	error {critcl found no compiler}
-}
+#if {![critcl::compiling]} {
+#	error {critcl found no compiler}
+#}
 
 namespace eval ::sodium {
 	variable bindingsVersion 999;
@@ -403,5 +403,6 @@ proc ::sodium::test {} {
 	puts "dec_to2 $dec_to2"
 }
 
+package provide sodium 69
 
 #::sodium::test

@@ -50,4 +50,5 @@ int pa_play_chan(char *cname) {
 	for(int i = 0 ; i < len ; i++) {
 		gdata_play.cname[i] = cname[i];
 	}
+	return 0;
 }

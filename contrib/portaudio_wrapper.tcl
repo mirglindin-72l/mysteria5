@@ -1,8 +1,8 @@
 package require critcl
 
-if {![critcl::compiling]} {
-	error {critcl found no compiler}
-}
+#if {![critcl::compiling]} {
+#	error {critcl found no compiler}
+#}
 
 namespace eval ::pa {
 	variable bindingsVersion 999;
@@ -186,6 +186,8 @@ proc ::pa::test_play_end {f} {
 
 	after 1000 ::pa::term
 }
+
+package provide pa 69
 
 #::pa::test
 

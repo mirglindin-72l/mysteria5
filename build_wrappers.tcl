@@ -3,8 +3,7 @@ if { $::tcl_platform(os) == {Darwin} } {
 } elseif { $::tcl_platform(os) != {Windows NT} } {
 	set winc x86_64-w64-mingw32-gcc-posix
 } else {
-	puts "we don't do windows"
-	return
+	set winc {C:\mingw64\bin\gcc}
 }
 
 ### I need to compile:
@@ -15,11 +14,12 @@ if { $::tcl_platform(os) == {Darwin} } {
 ### Linux to Linux -> untested, should work
 ###
 
-set targets {mac win}
+set targets {win}
 
 foreach target $targets {
 
 set dir [file join . lib]
+catch { file mkdir $dir }
 set td [glob [file join $dir *.o]]
 foreach f $td {
 	catch { file delete $f }
@@ -46,7 +46,7 @@ if { $target == {mac} } {
 	set l [list gcc -shared]
 } else {
 	set cc {-I./contrib/win64/Tcl9.0/include -static-libgcc -static-libstdc++}
-	set cl {-L./contrib/win64/Tcl9.0/lib -ltcl90 -ltclstub}
+	set cl {-L./contrib/tcl9.0.4/win -ltclstub}
 	set ext ".dll"
 	set c [list $winc -c -fPIC -DNDEBUG]
 	set l [list $winc -shared]
@@ -82,7 +82,10 @@ exec {*}$c -Wall -Os -c -I./ {*}$pcc {*}$cmn {*}$cc ./contrib/sodium_wrapper.c -
 puts "end cc sodium_wrapper $res"
 puts "start ld sodium_wrapper"
 catch {
-exec {*}$l -Os -L./ -L./lib {*}$pcl {*}$lcmn {*}$cl ./lib/sodium_wrapper.o -o ./lib/sodium_wrapper${ext}
+set la {}
+lappend la {*}$l ./lib/sodium_wrapper.o -Os -L./ -L./lib {*}$pcl {*}$lcmn {*}$cl -o ./lib/sodium_wrapper${ext}
+puts $la
+exec {*}$la
 } res
 puts "end ld sodium_wrapper $res"
 
@@ -104,7 +107,10 @@ exec {*}$c -Wall -Os -c -I./ {*}$pcc {*}$cmn {*}$cc ./contrib/portaudio_wrapper.
 puts "end cc portaudio_wrapper $res"
 puts "start ld portaudio_wrapper"
 catch {
-exec {*}$l -Os -L./ -L./lib {*}$pcl {*}$lcmn {*}$audio {*}$cl ./lib/portaudio_wrapper.o -o ./lib/portaudio_wrapper${ext}
+set la {}
+lappend la {*}$l ./lib/portaudio_wrapper.o -Os -L./ -L./lib {*}$pcl {*}$lcmn {*}$audio {*}$cl -o ./lib/portaudio_wrapper${ext}
+puts $la
+exec {*}$la
 } res
 puts "end ld portaudio_wrapper $res"
 
@@ -126,8 +132,18 @@ exec {*}$c -Wall -Os -c -I./ {*}$pcc {*}$cmn {*}$cc ./contrib/opus_wrapper.c -o 
 puts "end cc opus_wrapper $res"
 puts "start ld opus_wrapper"
 catch {
-exec {*}$l -Os -L./ -L./lib {*}$pcl {*}$lcmn {*}$audio {*}$cl ./lib/opus_wrapper.o -o ./lib/opus_wrapper${ext}
+set la {}
+lappend la {*}$l ./lib/opus_wrapper.o -Os -L./ -L./lib {*}$pcl {*}$lcmn {*}$audio {*}$cl -o ./lib/opus_wrapper${ext}
+puts $la
+exec {*}$la
 } res
 puts "end ld opus_wrapper $res"
+
+set dir [file join . lib]
+set td [glob [file join $dir *.o]]
+foreach f $td {
+	catch { file delete $f }
+}
+
 
 }
