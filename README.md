@@ -49,3 +49,9 @@ and code clearly outrageous for anyone who worked as a programmer. sorry.
 ## building
 
 run `tclsh build_wrappers.tcl` ; to package some sort of ready Windows version, run `package.sh`
+
+## mea culpa
+
+to fix Windows linking errors, Claude advice has been used ; so this project is no more AI-free ;
+it is however entirely vibe-coded in the sense that vibe is what was guiding me on project decisions more
+than any specific clear goal or hope.
