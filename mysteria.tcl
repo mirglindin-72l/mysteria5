@@ -802,7 +802,7 @@ proc show_group_details {group} {
 		set csorted [lsort -decreasing -stride 2 -index end $csorted]
 		set desc [lindex $csorted 0]
 		set role nobody
-		if { [lsearch -all -inline -exact $users $src] != {} || $users == "*" } {
+		if { [lsearch -all -inline -exact $users $src] != {} } {
 			set role user 
 		}
 		if { [lsearch -all -inline -exact $mods $src] != {} } {
@@ -1048,17 +1048,7 @@ proc ml_screen {mode id host port} {
 		} elseif { $found != {} } {
 			set contact [latest_contact $found]
 			if { $contact == {} } {
-				set c {}
-				dict set c nickname "#$found"
-				dict set c peerid $found
-				dict set c city {}
-				dict set c country {}
-				dict set c sex {}
-				dict set c birthday {}
-				dict set c epoch [clock seconds] 
-				dict set c sig {} 
-				dict set c pubkey [unwrap [lindex [split [lindex [array get ::peerstore $found] 1] {:}] 3]]
-				set contact [dict_to_contact $c]
+				set contact [peer_to_contact $found]
 			}
 			log_puts "ALL" "ml_screen add sigreq mode $mode id $id fallback contact $contact"
 			ml_add_sigreq $mode $id $contact
@@ -1073,7 +1063,23 @@ proc ml_screen {mode id host port} {
 	return $ret
 }
 
+proc peer_to_contact {peer} {
+	set c {}
+	dict set c nickname "#$peer"
+	dict set c peerid $peer
+	dict set c city {}
+	dict set c country {}
+	dict set c sex {}
+	dict set c birthday {}
+	dict set c epoch [clock seconds] 
+	dict set c sig {} 
+	dict set c pubkey [unwrap [lindex [split [lindex [array get ::peerstore $peer] 1] {:}] 3]]
+	set contact [dict_to_contact $c]
+	return $contact
+}
+
 proc ml_check_inc {mode id peerid} {
+	log_puts "ALL" "ml_check_inc $mode $id $peerid"
 	if { $mode == {p} } {
 		set buddyhash [crypto_cksum [lsort [list $peerid $::me(id)]]]
 		if { [array get ::buddies $buddyhash] != {} } {
@@ -1097,7 +1103,7 @@ proc ml_check_inc {mode id peerid} {
 			ml_replay $group
 		}
 		set rule $::rule($id)
-		set ret [rule_check_gchat $id [wrap "intruder:$peerid"]]
+		set ret [rule_check_gchat $id $peerid]
 		if { $ret == "allow" } {
 			return 0
 		} else {
@@ -1692,6 +1698,7 @@ proc rule_send {gid} {
 		ml_genc [lindex $speer 0] [lindex $speer 1] [lindex $speer 2] "MAIL 0 DIG [list $hto 1 $header]" 0
 	}
 	after 500 [list ml_showlist g $hto]
+	return
 }
 
 proc gmail_send {gid} {
@@ -2027,6 +2034,7 @@ proc dl_add_voice {w req buddyhash} {
 	dl_del $hash
 	dl_add $req $buddyhash {} [list play_voice_start $w $dur]
 	after idle [list dl_start $hash]
+	return
 }
 
 proc dl_add_image {w req buddyhash} {
@@ -2039,6 +2047,7 @@ proc dl_add_image {w req buddyhash} {
 	dl_del $hash
 	dl_add $req $buddyhash {} [list insert_image $w [$w index end] "Image"]
 	after idle [list dl_start $hash]
+	return
 }
 
 proc insert_image {w pos name data} {
@@ -2190,6 +2199,7 @@ proc update_dlstate {} {
 		lappend ::dlstate_list(state) $::dlstate_by_hash($hash,state)
 	}
 	after 1000 update_dlstate
+	return
 }
 
 proc tl_yview args {
@@ -2452,6 +2462,7 @@ proc record_voice_start {w} {
 	set ::cur(record,schedule) [after 300000 record_voice_end]
 	set ::cur(record,running) 1
 	after idle [list record_voice_run $w]
+	return
 }
 
 proc record_voice_run {w} {
@@ -2467,6 +2478,7 @@ proc record_voice_run {w} {
 		return
 	}
 	after 1000 [list record_voice_run $w]
+	return
 }
 
 proc record_voice_end {} {
@@ -2493,6 +2505,7 @@ proc record_voice_end {} {
 	set ::cur(record,schedule) {}
 	set ::cur(record,running) 0
 	set ::cur(record,end) [clock seconds]
+	return
 }
 
 proc play_voice_start {w dur data} {
@@ -2519,6 +2532,7 @@ proc play_voice_start {w dur data} {
 	set ::cur(play,schedule) [after [expr {$dur*1000}] play_voice_end]
 	set ::cur(play,running) 1
 	after idle [list play_voice_run $w]
+	return
 }
 
 proc play_voice_run {w} {
@@ -2543,6 +2557,7 @@ proc play_voice_run {w} {
 		set ::cur(play,line) "[expr {${elapsed}/60}]m[expr {${elapsed}%60}]s/[expr {${dur}/60}]m[expr {${dur}%60}]s" 
 	}
 	after 1000 [list play_voice_run $w]
+	return
 }
 
 proc show_play_voice {} {
@@ -4115,6 +4130,7 @@ proc update_directory {} {
 		read_contacts $::contactsearch
 	}
 	after 3000 update_directory
+	return
 }
 
 proc update_group_directory {} {
@@ -4126,7 +4142,7 @@ proc update_group_directory {} {
 		read_groups $::groupsearch
 	}
 	after 3000 update_group_directory
-	
+	return
 }
 
 proc read_message {header} {
@@ -4930,6 +4946,7 @@ proc sol_store {} {
 		}
 	}
 	}
+	return
 }
 
 proc sc_setsources {} {
@@ -5647,6 +5664,7 @@ proc gchat_recv {p host port msg} {
 	}
 	after 50 check_gchatqueue
 	log_puts "ALL" "gchat_recv end"
+	return
 }
 
 proc gchat_history {p id data} {
@@ -5960,6 +5978,7 @@ proc check_gchatqueue {} {
 			array unset ::gchatqueue "$p,$id,$mid,*"
 		}
 	}
+	return
 }
 
 #proc check_chatqueue {} {
@@ -6062,6 +6081,7 @@ proc update_groups {} {
 		lappend ::jgrouplist(main,h) $value
 	}
 	after 3000 update_groups
+	return
 }
 
 proc latest_contact {peerid} {
@@ -6093,8 +6113,9 @@ proc latest_contact {peerid} {
 		log_puts "ALL" "latest_contact return $contact"
 		return $contact
 	} else {
-		log_puts "ALL" "latest_contact return nothing"
-		return
+		log_puts "ALL" "latest_contact return converted peer"
+		set contact [peer_to_contact $peerid]
+		return $contact
 	}
 }
 
@@ -6115,6 +6136,7 @@ proc update_buddy {buddyhash} {
 			set ::buddies($key) $latest
 		}
 	}
+	return
 }
 
 proc update_buddies {} {
@@ -6135,6 +6157,7 @@ proc update_buddies {} {
 		lappend ::buddylist(main,k) $key
 	}
 	after 3000 update_buddies
+	return
 }
 
 proc copy_my_contact {} {
@@ -6214,6 +6237,7 @@ proc add_copied_group {} {
 		after idle [list sc_publishcontact ${::me(contact)}]
 		after idle [list ml_grouphead $group]
 	}
+	return
 }
 
 proc set_peer_status {id type comment last} {
@@ -6231,6 +6255,7 @@ proc set_peer_status {id type comment last} {
 		# 5 minutes
 		after 300000 [list set_peer_status $id " " "offline" $epoch]
 	}
+	return
 }
 
 proc send_my_status {type comment} {
@@ -6250,6 +6275,7 @@ proc send_my_status {type comment} {
 		gchat_notice gchat $gid "STATUS $type/$comment"
 	}
 	log_puts "ALL" "send_my_status end"
+	return
 }
 
 proc sc_stop {ids} {
@@ -6266,6 +6292,7 @@ proc sc_stop {ids} {
 		after 5000 [list array unset ::waitvalue "$id*"]
 	}
 	after 200 check_waitvalues
+	return
 }
 
 proc sc_get_sources {hash} {
@@ -7304,7 +7331,7 @@ proc req_sol {f r a} {
 	puts [list $r "$r:[lindex [split $f { }] 0]:[lindex [split $f { }] 1]:[lindex $a 0]"]
 	# commented, because check_peers does that
 	# uncommented because it doesn't
-	after 200 check_peers
+	after 200 [list check_peers]
 	#put_to_buckets $s
 	# set fields
 	puts [list $r "$r:[lindex [split $f { }] 0]:[lindex [split $f { }] 1]:[lindex $a 0]"]
@@ -7774,7 +7801,8 @@ proc str_ping {s r a} {
 		array set ::p [list "$s,state" "FAIL" "$s,change" [clock microseconds]]
 		remove_from_buckets $::p($s,key)
 	}
-	after 200 check_peers
+	after 200 [list check_peers]
+	return
 }
 
 proc str_store {s r} {
@@ -7789,6 +7817,7 @@ proc str_store {s r} {
 		}
 		array set ::p [list "$s,state" "FAIL" "$s,change" [clock microseconds]]
 	}
+	return
 }
 
 proc str_find_node {s r a} {
@@ -7812,6 +7841,7 @@ proc str_find_node {s r a} {
 		array set ::p [list "$s,state" "FAIL" "$s,change" [clock microseconds]]
 	}
 	after 200 check_peers
+	return
 }
 
 proc str_find_value {s r a} {
@@ -7837,6 +7867,7 @@ proc str_find_value {s r a} {
 		}
 		array set ::p [list "$s,state" "FAIL" "$s,change" [clock microseconds]]
 	}
+	return
 }
 
 proc elapsed_s {p since s} {
@@ -8117,6 +8148,7 @@ proc ml_personhead {contact} {
 		}
 	}
 	after 200 [list ml_showlist p $peerid]
+	return
 }
 
 proc ml_personbrowse {contact} {
@@ -8350,6 +8382,7 @@ proc ml_grouphead {group} {
 	after 200 [list ml_showlist g $gid]
 	after 200 [list ml_replay $group]
 	log_puts "ALL" "ml_grouphead end"
+	return
 }
 
 proc ml_showhier {hdrlist} {
@@ -8426,7 +8459,7 @@ proc rule_check {group hdr rule} {
 	set mods [dict get $rule mods]
 
 	# vars - gid, author, owner, mods, users
-	if { $type == {g} && ( $users == "*" || [lsearch -all -inline -exact $users $author] != {} || $author == $owner ) } {
+	if { $type == {g} && ( [lsearch -all -inline -exact $users $author] != {} || $author == $owner ) } {
 		return allow
 	} elseif { $type == {gc} && ( $author == $owner || [lsearch -all -inline -exact $mods $author] != {} ) } {
 		return allow_set
@@ -8505,7 +8538,7 @@ proc disp_rule {gid id} {
 		append ret [::msgcat::mc "owner"]
 	} elseif { [lsearch -all -inline -exact $mods $id] != {} } {
 		append ret [::msgcat::mc "mod"]
-	} elseif { [lsearch -all -inline -exact $users $id] != {} || $users == "*" } {
+	} elseif { [lsearch -all -inline -exact $users $id] != {} } {
 		append ret [::msgcat::mc "user"]
 	} else {
 		append ret [::msgcat::mc "nobody"]
@@ -8558,7 +8591,6 @@ proc ml_replay {group} {
 	set mods {}
 	lappend mods $gpeerid
 	set users {}
-	lappend users "*" 
 
 	# rule is a dictionary with variables
 	set rule {}
@@ -9172,6 +9204,7 @@ proc dl_getpeers {hash cnt} {
 			after 100 [list dl_run $hash]
 		}
 	}
+	return
 }
 
 proc dl_add {req buddyhash otherpeers action} {
@@ -9229,6 +9262,7 @@ proc dl_start {hash} {
 	dl_getpeers $hash 0
 	dl_check $hash
 	after 50 [list dl_run $hash]
+	return
 }
 
 proc dl_check {hash} {
@@ -9251,6 +9285,7 @@ proc dl_check {hash} {
 		dl_run $hash
 	}
 	after 1000 [list dl_check $hash]
+	return
 }
 
 proc dl_run {hash} {
@@ -9309,6 +9344,7 @@ proc dl_run {hash} {
 	} else {
 		log_puts "ERR" "dl_run weird top $hash , top $::dlstate_by_hash($hash,top), size $size"
 	}
+	return
 }
 
 proc dl_stop {hash} {
@@ -9371,6 +9407,7 @@ proc dl_finish {hash} {
 	}
 
 	after 18000 [list dl_del $hash]
+	return
 }
 
 proc dl_del {hash} {

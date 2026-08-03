@@ -715,7 +715,7 @@ proc i2p_recv {c dst msg} {
 	}
 	log_puts "ALL" "i2p_recv IN $msg FROM $dst"
 	set rs {}
-	lappend rs {*}[str_req "$dst 0" $msg 1]
+	lappend rs {*}[str_req "$dst 0" $msg 0]
 	log_puts "ALL" "i2p_recv RS $rs"
 	foreach r $rs {
 		if { $r == -1 || $r == {} } {
