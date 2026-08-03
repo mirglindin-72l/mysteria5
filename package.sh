@@ -9,7 +9,8 @@ mkdir ./package
 
 cp -r ../mysteria5 ./package/
 rm -rf ./package/mysteria5/.store
-rm -rf ./package/mysteria5/TODO
+rm -rf ./package/mysteria5/TODO*
+rm -rf ./package/mysteria5/.DS_Store
 rm -rf ./package/mysteria5/*.log
 rm -rf ./package/mysteria5/contrib/ttkthemes
 rm -rf ./package/mysteria5/.git
