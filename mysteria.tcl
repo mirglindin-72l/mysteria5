@@ -8621,7 +8621,6 @@ proc ml_replay {group} {
 		set ck [rule_check $group $hdr $rule]
 		switch $ck {
 			"allow" {
-				#log_puts "ERR" "ml_replay shouldn't be here $hash"			
 				log_puts "ALL" "ml_replay allow $hash"			
 			}
 			"allow_set" {
@@ -8794,6 +8793,7 @@ proc ml_get_srcs {grp} {
 } 
 
 proc ml_get_hdrs {days p id} {
+	log_puts "ALL" "ml_get_hdrs $days $p $id"
 	#set path [file join $::filepath "mlhdr" $grp]
 	#if { [file exists $path] == 0 } {
 	#	log_puts "ERR" "ml_get_hdrs path $path doesn't exist"
@@ -8834,12 +8834,20 @@ proc ml_get_hdrs {days p id} {
 		return
 	} 
 	set cnt 0
-	set hdrs {}	
+	array set tmp {}	
        	foreach {k v} [find_bin $path {} $minepoch {} {}] {
-		lappend hdrs $v
+		set tmp($k) $v
+	}
+	set hashes [array names tmp]
+	set hashes [ml_filter_del $hashes]
+	set hdrs {} 
+	foreach hash $hashes {
+		set hdr [lindex [array get tmp $hash] end]
+		if { $hdr != {} } {
+			lappend hdrs $hdr
+		}
 	}
 	set hdrs [lsort -unique $hdrs]
-	set hdrs [ml_filter_del $hdrs]
 	set cnt [llength $hdrs]
 	return "$rid $cnt $hdrs"
 } 
@@ -8922,7 +8930,7 @@ proc ml_filter_del {hashes} {
 proc ml_get_eml {p hash} {
 	log_puts "ALL" "getting letter $hash"
 	if { [ml_filter_del $hash] == {} } {
-		log_puts "ERR" "letter $hash in delete list, not stored"
+		log_puts "ERR" "ml_get_eml letter $hash in delete list, not stored"
 		return -1
 	}
 	#set cached {}
@@ -8956,18 +8964,18 @@ proc ml_get_eml {p hash} {
 		lappend ret $v
 	}
 	if { [llength $ret] > 1 } {
-		log_puts "ERR" "more than one letter $p $hash stored"
+		log_puts "ERR" "ml_get_eml more than one letter $p $hash stored"
 		return -1
 	}
 	set ret [lindex [lsort -unique $ret] end]
 	if { $ret == {} } {
-		log_puts "ERR" "no letter $p $hash stored"
+		log_puts "ERR" "ml_get_eml no letter $p $hash stored"
 		return -1
 	} 
 	set chash [crypto_cksum $ret]
 	### end
 	if { $p == "all" && $hash != $chash } {
-		log_puts "ERR" "wrong hash $hash != $chash"
+		log_puts "ERR" "ml_get_eml wrong hash $hash != $chash"
 		return -1
 	}
 
@@ -8984,6 +8992,7 @@ proc ml_get_eml {p hash} {
 	#	array unset ::lettercache "*,$p,$t"	
 	#}
 
+	log_puts "ALL" "ml_get_eml return $hash"
 	return $ret
 }
 
