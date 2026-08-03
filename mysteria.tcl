@@ -3130,8 +3130,10 @@ proc show_contact_selection {} {
 		return
 	}
 	set choose_cmd {
-		set ::cur(main,person,h) $::buddies([lindex $::buddylist(main,k) [lindex [.sbs.f.l index active] 0]]) ;
-		set ::cur(main,person,l) [dict get [contact_to_dict $::cur(main,person,h)] nickname] ;
+		set key [lindex $::buddylist(main,k) [lindex [.sbs.f.l index active] 0]]
+		update_buddy $key
+		set ::cur(main,person,h) $::buddies($key)
+		set ::cur(main,person,l) [dict get [contact_to_dict $::cur(main,person,h)] nickname]
 		if {$::cur(main,person,h) != ""} {
 			set ::cur(main,mode) {p}
 			ml_showlist p [dict get [contact_to_dict $::cur(main,person,h)] peerid]
@@ -5529,6 +5531,9 @@ proc gchat_recv {p host port msg} {
 	# control rules),
 	# put message to some persistent queue if not, so to not show it before need
 	switch $type {
+		"OFFER" {
+			array set ::contacts [list [shawrap "from:$from"] $body]
+		}
 		"NOCONTACT" {
 			# dunno what, the user is not in that group
 		}
@@ -6093,7 +6098,7 @@ proc latest_contact {peerid} {
 	set contacts [lsearch -all -inline [array get ::contacts] "$peerid:*"]
 	set l {}
 	set epoch {}
-	foreach {k contact} $contacts {
+	foreach contact $contacts {
 		set c [contact_to_dict $contact]
 		if { $c == {} } {
 			continue
@@ -6102,6 +6107,9 @@ proc latest_contact {peerid} {
 			continue
 		}
 		if { [dict get $c sig] == {} } {
+			continue
+		}
+		if { [string index [dict get $c nickname] 0] == "#" } {
 			continue
 		}
 		set epoch [dict get $c epoch]
@@ -6126,10 +6134,6 @@ proc update_buddy {buddyhash} {
 		set peerid [dict get $b peerid]
 		set nickname [dict get $b nickname]
 		set sig [dict get $b sig]
-		if { $sig != {} && $nickname != "#$peerid"} {
-			log_puts "ALL" "update_buddy skip"
-			continue
-		}
 		set latest [latest_contact $peerid]
 		if { $latest != {} } {
 			log_puts "ALL" "update_buddy latest $latest"
