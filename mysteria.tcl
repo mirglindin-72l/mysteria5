@@ -738,7 +738,7 @@ proc show_group_details {group} {
 	toplevel .sgf
 	wm title .sgf [::msgcat::mc "groupview_t"]
 	pack [panedwindow .sgf.p -ori vert] -fill both -expand 1
-	.sgf.p add [wframe .sgf.b1]
+	.sgf.p add [wframe .sgf.b1] -minsize 24 -stretch never
 	if { [array get ::jgroups [dict get $g gid]] == "" } {
 		pack [wbutton .sgf.b1.a -text [::msgcat::mc "add"]  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command "catch { set ::groups([dict get $g gid]) $group ; set ::jgroups([dict get $g gid]) $group ; ml_add_srcs [dict get $g gid] ${::me(id)} ;destroy .sgf ; after idle [list sc_publishcontact ${::me(contact)}] ; after idle [list ml_grouphead $group] }"] -fill both -side right
 	} else {
@@ -747,10 +747,10 @@ proc show_group_details {group} {
 		pack [wbutton .sgf.b1.pub -text [::msgcat::mc "publish"]  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command "sc_publishgroup $group"] -fill both -side left
 		pack [wbutton .sgf.b1.d -text [::msgcat::mc "delete"]  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command "array unset ::jgroups [dict get $g gid] ; destroy .sgf ; after idle [list ml_grouphead $group]"] -fill both -side right
 	}
-	.sgf.p add [wframe .sgf.b2]
+	.sgf.p add [wframe .sgf.b2] -minsize 24 -stretch never
 	pack [wlabel .sgf.b2.lname -text "Name: " -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font)] -fill both -side left 
 	pack [wlabel .sgf.b2.name -text "[dict get $g name]" -wraplength 480 -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(listfont)] -fill both -side right 
-	.sgf.p add [wframe .sgf.b3]
+	.sgf.p add [wframe .sgf.b3] -minsize 24 -stretch never
 	pack [wlabel .sgf.b3.ldesc -text "Desc: " -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side left
 	pack [wlabel .sgf.b3.desc -text "[dict get $g desc]" -wraplength 480 -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(listfont) ] -fill both -side right
 	.sgf.p add [wframe .sgf.b4]
@@ -810,11 +810,11 @@ proc show_group_details {group} {
 		}
 		lappend l_obj $src $desc $role
 	}
-	.sgf.p add [wframe .sgf.b9]
+	.sgf.p add [wframe .sgf.b9] -minsize 24 -stretch never
 	pack [wlabel .sgf.b9.l -text [::msgcat::mc "Sources of group: "] -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side left
 	set choice {nobody user mod}
 	foreach {src desc role} $l_obj {
-		.sgf.p add [wframe .sgf.c_$src]
+		.sgf.p add [wframe .sgf.c_$src] -minsize 24 -stretch never
 		pack [wlabel .sgf.c_$src.desc -text "$desc" -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -side left
 		if { [lsearch -all -inline $mods $::me(id)] != {} } {
 			set e [tk_optionMenu .sgf.c_$src.role ::sgf_sel($gid,$src,role) {*}$choice]
@@ -853,7 +853,7 @@ proc show_group_details {group} {
 		set ::rule($gid) $rule
 		rule_send $gid
 	}
-	.sgf.p add [wframe .sgf.c]
+	.sgf.p add [wframe .sgf.c] -minsize 24 -stretch never
 	if { [lsearch -all -inline $mods $::me(id)] != {} } {
 		pack [wbutton .sgf.c.s -text [::msgcat::mc "post control rule"] -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) -command "rule_cmd $gid" ] -fill both -side right 
 	}
@@ -887,14 +887,14 @@ proc show_groupform {} {
 	toplevel .gf
 	wm title .gf [::msgcat::mc "groupcreate_t"]
 	pack [panedwindow .gf.p -ori vert] -fill both -expand 1
-	.gf.p add [wframe .gf.b0]
+	.gf.p add [wframe .gf.b0] -minsize 24 -stretch never
 	pack [wlabel .gf.b0.ml -text [::msgcat::mc "groupcreate_l"] -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side left 
 	pack [wbutton .gf.b0.v -text [::msgcat::mc "commit"]  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command $commit_cmd] -fill both -side right
 	pack [wbutton .gf.b0.g -text [::msgcat::mc "generate"]  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command {generate_group}] -fill both -side right
-	.gf.p add [wframe .gf.b1]
+	.gf.p add [wframe .gf.b1] -minsize 24 -stretch never
 	pack [wlabel .gf.b1.lname -text "Name: " -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font)] -fill both -side left 
 	pack [wentry .gf.b1.name -textvariable ::gcard(name) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -selectforeground $::options(basecolor) -selectbackground $::options(hilightcolor) -font $::options(listfont) -width 24 ] -fill both -side right
-	.gf.p add [wframe .gf.b2]
+	.gf.p add [wframe .gf.b2] -minsize 24 -stretch never
 	pack [wlabel .gf.b2.ldesc -text "Desc: " -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side left
 	pack [wentry .gf.b2.desc -textvariable ::gcard(desc) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -selectforeground $::options(basecolor) -selectbackground $::options(hilightcolor) -font $::options(listfont) -width 24 ] -fill both -side right 
 	.gf.p add [wframe .gf.b3]
@@ -3197,10 +3197,10 @@ proc show_editor {contact} {
 	toplevel .e
 	wm title .e [::msgcat::mc "editor_t"] 
 	pack [panedwindow .e.p -ori vert] -fill both -expand 1
-	.e.p add [wframe .e.b0]
+	.e.p add [wframe .e.b0] -minsize 24 -stretch never
 	pack [wlabel .e.b0.ml -text [::msgcat::mc m_from] -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) -justify right] -fill both -side left 
 	pack [wlabel .e.b0.m -text "$::me(nickname) <$::me(id)>" -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) -justify left] -fill both -side left 
-	.e.p add [wframe .e.b1]
+	.e.p add [wframe .e.b1] -minsize 24 -stretch never
 	pack [wlabel .e.b1.tl -text [::msgcat::mc m_to] -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) -justify right] -fill both -side left 
 	if { $::cur(main,mode) == "m" && $::card(main) != "" } {
 		set ::to(main) [dict get [contact_to_dict $::card(main)] nickname]
@@ -3224,7 +3224,7 @@ proc show_editor {contact} {
 		set ::cur(main,mode) {n}
 		pack [wentry .e.b1.t -textvariable ::to(main) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -selectforeground $::options(basecolor) -selectbackground $::options(hilightcolor) -font $::options(listfont) -width 60 ] -fill both -expand 1 -side left 
 	}
-	.e.p add [wframe .e.b2]
+	.e.p add [wframe .e.b2] -minsize 24 -stretch never
 	pack [wlabel .e.b2.sl -text [::msgcat::mc m_subject] -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) -justify right] -fill both -side left
 	pack [wentry .e.b2.s -textvariable ::subject(main) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -selectforeground $::options(basecolor) -selectbackground $::options(hilightcolor) -font $::options(listfont) -width 60] -fill both -expand 1 -side left
 	if { $::parent(main) != "" } {
@@ -3237,13 +3237,13 @@ proc show_editor {contact} {
 		pack [wlabel .e.b3.sl -text [::msgcat::mc m_parent] -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) -justify right] -fill both -side left
 		pack [wlabel .e.b3.s -text "$ps" -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) -width 60] -fill both -expand 1 -side left 
 	}
-	.e.p add [wframe .e.x]
+	.e.p add [wframe .e.x] -stretch always
 	pack [wscrollbar .e.x.y -activebackground $::options(hilightcolor)  -troughcolor $::options(hilightcolor)  -command ".e.x.t yview"] -fill y -side right
 	pack [text .e.x.t -wrap word -yscrollc ".e.x.y set" \
 		-selectforeground {#6090c0} -selectbackground $::options(hilightcolor) \
 		-padx 5 -pady 3 -height 12 -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(listfont)] \
 		-fill both -expand 1 -side right
-	.e.p add [wframe .e.h] -hide true
+	.e.p add [wframe .e.h] -minsize 24 -stretch never -hide true
 	pack [wbutton .e.h.i -text [::msgcat::mc "e_filepick"]  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command "insert_single_file e none"] -fill both -side left 
 	pack [wbutton .e.h.a -text [::msgcat::mc "e_fileindex"]  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command "show_fileoffer e none" ] -fill both -side left
 	pack [wbutton .e.h.limg -text [::msgcat::mc "image"]  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command "insert_linked_image e {}"] -fill both -side right 
@@ -3256,7 +3256,7 @@ proc show_editor {contact} {
 	#pack [wbutton .e.ti.at -text "inline file" -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command "attach_file .e.x.t"] -fill both -side right 
 	#pack [wbutton .e.ti.img -text "inline image"  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command "insert_inline_image e {}"] -fill both -side right 
 	#pack [wbutton .e.ti.rec -text "inline voice"  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command {}] -fill both -side right 
-	.e.p add [wframe .e.t]
+	.e.p add [wframe .e.t] -minsize 24 -stretch never
 	if { $::cur(main,mode) == {p} } {
 		pack [wbutton .e.t.v -text [::msgcat::mc "commit"]  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command {ml_add_hdrs mlphdr [dict get [contact_to_dict $::cur(main,person,h)] peerid] [form_message] ; destroy .e } ] -fill both -side right
 	} elseif { $::cur(main,mode) == {g} } {
