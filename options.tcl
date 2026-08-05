@@ -50,19 +50,20 @@ proc show_options {} {
 	toplevel $w
 	wm title $w "Options"
 	pack [panedwindow "$w.p" -ori ver] -fill both -expand 1
-	"$w.p" add [frame "$w.t"] -stretch never
+	"$w.p" add [frame "$w.t"] -minsize 24 -stretch never
 	pack [label "$w.t.l" -text "Options list:" -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side left
+	"$w.p" add [panedwindow "$w.o" -ori ver] -stretch always
 	set i 0
 	foreach {key value} [lsort -stride 2 -index 0 [array get ::options]] {
 		if { $key == {} } {
 			continue
 		}
-		"$w.p" add [frame "$w.t_$i"] -stretch never
+		"$w.o" add [frame "$w.t_$i"] -minsize 24 -stretch never
 		pack [label "$w.t_$i.l" -text "$key" -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side left
         	pack [wentry "$w.t_$i.e" -textvar ::options($key) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side right
 		incr i 1
 	}
-	"$w.p" add [frame "$w.b"] -stretch never
+	"$w.p" add [frame "$w.b"] -minsize 24 -stretch never
 	pack [wbutton "$w.b.r" -text "read" -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command "read_ini"] -fill both -side right
 	pack [wbutton "$w.b.w" -text "write" -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command "write_ini ; msg_set"] -fill both -side right
 }

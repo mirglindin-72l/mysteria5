@@ -8853,15 +8853,6 @@ proc ml_get_hdrs {days p id} {
 } 
 
 proc ml_add_del {hash} {
-	#set hash [lindex [split $hash {:}] 0]
-	#set path [file join $::filepath mldel]
-	#set f [open $path a]
-	#puts $f $hash
-	#flush $f
-	#close $f
-	#ml_del_eml $hash
-	#return
-
 	set path [file join $::filepath "mldel.dat"]
 	save_bin $path [list $hash $hash]
 	#ml_del_eml $hash

@@ -144,6 +144,9 @@ proc doc_new {p id} {
 
 proc show_doc {p id hash} {
 	log_puts "ALL" "show_doc $p $id $hash"
+	if { $p != "mlhdr" } { return }
+	if { $id == {} } { return }
+	if { $hash == {} } { return }
 	set w ".d_${p}_${id}_${hash}"
 	if { [winfo exists $w] } {
 		return
