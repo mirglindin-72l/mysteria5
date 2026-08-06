@@ -2796,11 +2796,11 @@ proc show_mail {} {
 		}
 	}
 
-	set gr_cmd {
-		if { $::cur(main,mode) == {g} && $::cur(main,group,h) != "" } {
-			show_gredit [clock microseconds] {} {}
-		}
-	}
+	#set gr_cmd {
+	#	if { $::cur(main,mode) == {g} && $::cur(main,group,h) != "" } {
+	#		show_gredit [clock microseconds] {} {}
+	#	}
+	#}
 
 	set reply_cmd {
 		if { $::cur(main,mode) == {m} } {	
@@ -2885,11 +2885,11 @@ proc show_mail {} {
 		}
 	}
 
-	set stop_cmd {
-		.m.b.gtr configure -state normal
-		.m.b.gtrs configure -state disabled
-		sc_stop $::search
-	}
+	#set stop_cmd {
+	#	.m.b.gtr configure -state normal
+	#	.m.b.gtrs configure -state disabled
+	#	sc_stop $::search
+	#}
 
 	set filter_cmd {
 		if { $::cur(main,mode) == {g} && $::cur(main,group,h) != {} } {
@@ -6170,7 +6170,19 @@ proc update_buddies {} {
 
 proc copy_my_contact {} {
 	clipboard clear
-	clipboard append $::me(contact)
+	foreach {key val} [array get ::transports "*,enable"] {
+		set tran [lindex [split $key {,}] 0]
+		if { $tran == {} } {
+			continue	
+		}
+		set addr {}
+		catch { set addr $::cur($tran,dest) }
+		if { $addr == {} } {
+			continue
+		}
+		clipboard append "[wrap $::me(contact)]:[wrap ${tran}/${addr}]"
+		return
+	}
 	return
 }
 
@@ -6187,15 +6199,33 @@ proc copy_contact {} {
 	if { $c == {} } {
 		return
 	}
-	clipboard append $contact
+	set peerid [dict get $c peerid]
+	if { $peerid == {} } {
+		return
+	}
+	set peer [lindex [array get ::peerstore "$peerid*"] end]
+	set speer [split $peer {:}]
+	set host [lindex $speer 1]
+	if { $host == {} } {
+		return
+	}
+	clipboard append "[wrap $contact]:[wrap $host]"
 	return
 }
 
 proc add_copied_contact {} {
 	set s {}
 	catch {
-	set s [clipboard get]
+	set s [split [clipboard get] {:}]
 	}
+	if { $s == {} } {
+		return
+	}
+	set contact [unwrap [lindex $s 0]]
+	set host [unwrap [lindex $s 1]]
+	if { $contact == {} || $host == {} } {
+		return
+	} 
 	set c [contact_to_dict $s]
 	if { $c == {} } {
 		return
@@ -6203,7 +6233,8 @@ proc add_copied_contact {} {
 	if { [dict get $c peerid] == $::me(id) } {
 		return
 	}
-	chat_add $s
+	sol $host 0
+	chat_add $contact
 	return
 }
 
