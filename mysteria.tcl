@@ -3016,8 +3016,8 @@ proc show_mail {} {
 		pack [wlabel .m.t_${name}.eem -textvar ::cur($name,mstate) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side left
 		pack [wlabel .m.t_${name}.eedl -text "[::msgcat::mc ${name}_dest]: " -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side left
 		pack [wlabel .m.t_${name}.eed -textvar ::cur($name,dest) -width 40 -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side left
-		pack [wbutton .m.t_${name}.eep -text [::msgcat::mc "add copied peer"] -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) -command $paste] -side right
-		pack [wbutton .m.t_${name}.eec -text [::msgcat::mc "copy my dest"] -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) -command $copy] -side right
+		#pack [wbutton .m.t_${name}.eep -text [::msgcat::mc "add copied peer"] -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) -command $paste] -side right
+		#pack [wbutton .m.t_${name}.eec -text [::msgcat::mc "copy my dest"] -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) -command $copy] -side right
 	}
 	.m.p add [wframe .m.i] -minsize 24 -stretch never
 	pack [wlabel .m.i.lm -text "[::msgcat::mc port]: " -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side left
