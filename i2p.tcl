@@ -593,7 +593,7 @@ proc i2p_maintain_data {} {
 	log_puts "ALL" "i2p_maintain_data end"
 }
 
-proc i2p_send {dst msg} {
+proc i2p_send {dst tmp msg} {
 	if { $dst == $::cur(i2p,dest) } {
 		return
 	}
@@ -715,14 +715,14 @@ proc i2p_recv {c dst msg} {
 	}
 	log_puts "ALL" "i2p_recv IN $msg FROM $dst"
 	set rs {}
-	lappend rs {*}[str_req "$dst 0" $msg 0]
+	lappend rs {*}[str_req "i2p/${dst} 0" $msg 0]
 	log_puts "ALL" "i2p_recv RS $rs"
 	foreach r $rs {
 		if { $r == -1 || $r == {} } {
 			continue
 		}
 		log_puts "ALL" "i2p_recv R OUT $r TO $dst"
-		i2p_send $dst $r
+		i2p_send $dst 0 $r
 		log_puts "ALL" "i2p_recv R PUT"
 	}
 	log_puts "ALL" "i2p_recv R DONE"
@@ -742,7 +742,7 @@ proc i2p_paste_dest {} {
 	catch {
 	set s [clipboard get]
 	}
-	set ::formhost $s
+	set ::formhost "i2p/${s}"
 	set ::formport 0
 	return
 }
@@ -765,3 +765,9 @@ proc i2p_paste_mdest {} {
 	return
 }
 
+set ::transports(i2p,send) "i2p_send"
+set ::transports(i2p,start) "i2p_load ; i2p_start"
+set ::transports(i2p,end) "i2p_end ; i2p_mend"
+set ::transports(i2p,copy) "i2p_copy_dest"
+set ::transports(i2p,paste) "i2p_paste_dest ; sol \$::formhost \$::formport"
+set ::transports(i2p,enable) 1

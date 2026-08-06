@@ -116,7 +116,7 @@ proc audio_send {q} {
 		set host $::cur(audio,mhost)
 		set port $::cur(audio,mport)
 		log_puts "ALL" "audio_send host $host port $port"
-		if { $::options(run_i2p) == 1 } {
+		if { [lindex [array get ::transports "i2p,enable"] end] == 1 } {
 			after idle [list i2p_msend $host [::opus::enc $data 48000 1]]
 		}
 	} else {
@@ -222,7 +222,7 @@ proc show_audio {} {
 
 proc audio_ring {peerid} {
 	log_puts "ALL" "audio_ring"
-	if { $::options(run_i2p) != 1 } {
+	if { [lindex [array get ::transports "i2p,enable"] end] != 1 } {
 		return
 	}
 	if { $peerid == {} } {
@@ -243,7 +243,7 @@ proc audio_ring {peerid} {
 
 proc audio_ok {} {
 	log_puts "ALL" "audio_ok"
-	if { $::options(run_i2p) != 1 } {
+	if { [lindex [array get ::transports "i2p,enable"] end] != 1 } {
 		return
 	}
 	catch { destroy .w_audio_ring }
@@ -254,7 +254,7 @@ proc audio_ok {} {
 
 proc audio_no {} {
 	log_puts "ALL" "audio_no"
-	if { $::options(run_i2p) != 1 } {
+	if { [lindex [array get ::transports "i2p,enable"] end] != 1 } {
 		return
 	}
 	catch { destroy .w_audio_ring }
@@ -264,7 +264,7 @@ proc audio_no {} {
 
 proc audio_down {} {
 	log_puts "ALL" "audio_down"
-	if { $::options(run_i2p) != 1 } {
+	if { [lindex [array get ::transports "i2p,enable"] end] != 1 } {
 		return
 	}
 	catch { destroy .w_audio_call }

@@ -244,10 +244,12 @@ proc launch {} {
 
 	vwait forever
 
-	if { $::options(run_i2p) != 1 } {
-		close $::ct
-	} else {
-		i2p_end
+	foreach {key val} [array get ::transports "*,enable"] {
+		set name [lindex [split $key {,}] 0]
+		catch { eval $::transports($name,end) }
+	}
+	if { [array get ::transports] == {} } {
+		catch { close $::ct }
 	}
 
 	close $::log
@@ -283,25 +285,32 @@ proc net_toggle {} {
 	if { $::cur(net,on) != 1 } {
 		set ::cur(net,on) 1
 		set ::cur(net,l) "net on"
-		if { $::options(run_i2p) != 1 } {
-			log_puts "ALL" "listen port $::options(myport)"
-			set ::ct [tcp_listen]
-			sys_upnpc $::options(myport)
-			set ::options(audio_enabled) 0
-		} else {
-			log_puts "ALL" "start I2P SAM session on port $::options(i2p_port)"
-			set ::options(myport) 0
-			i2p_load
-			i2p_start
+		if { [array get ::transports] == {} } {
+			log_puts "ALL" "listen TCP port $::options(myport)"
+			catch { set ::ct [tcp_listen] } res
+			log_puts "ALL" "listen res $res"
+			catch { sys_upnpc $::options(myport) } res
+			log_puts "ALL" "upnpc res $res"
+		}
+		foreach {key val} [array get ::transports "*,enable"] {
+			set name [lindex [split $key {,}] 0]
+			log_puts "ALL" "start transport $name session" 
+			catch { eval $::transports($name,start) } res
+			log_puts "ALL" "start transport $name res $res"
 		}
 	} else {
 		set ::cur(net,on) 0
 		set ::cur(net,l) "net off"
-		if { $::options(run_i2p) != 1 } {
-			close $::ct
-		} else {
-			i2p_end
-			i2p_mend
+		if { [array get ::transports] == {} } {
+			log_puts "ALL" "close TCP port $::options(myport)"
+			catch { close $::ct } res
+			log_puts "ALL" "close res $res"
+		}
+		foreach {key val} [array get ::transports "*,enable"] {
+			set name [lindex [split $key {,}] 0]
+			log_puts "ALL" "stop transport $name session" 
+			catch { eval $::transports($name,end) } res
+			log_puts "ALL" "stop transport $name res $res"
 		}
 	}
 }
@@ -1027,7 +1036,7 @@ proc make_nmenu {} {
 proc ml_screen {mode id host port} {
 	log_puts "ALL" "ml_screen host $host port $port"
 	set found {}
-	foreach peer [lsearch -all -inline [array get ::peerstore] "*:$host:$port:*"] {
+	foreach peer [lsearch -all -inline [array get ::peerstore] "*$host:$port:*"] {
 		lappend found [lindex [split $peer {:}] 0]
 	}
 	#log_puts "ALL" "ml_screen found all $found"
@@ -2731,10 +2740,6 @@ proc show_debug {} {
 	grid [wbutton .p.x3.bfv -text "find_value" -command {str_start [str_create FIND_VALUE $::formhost $::formport $::formkey none]} -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) ] -sticky nsew -columnspan 1 -rowspan 1 -column 4 -row 0
 	grid [wbutton .p.x3.ss -text "sol_store" -command {sol_store} -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) ] -sticky nsew -columnspan 1 -rowspan 1 -column 5 -row 0
 	#grid [wbutton .p.x3.hf -text "hash_files" -command {hash_files} -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) ] -sticky nsew -columnspan 1 -rowspan 1 -column 5 -row 0
-	if { $::options(run_i2p) == 1 } {
-	grid [wbutton .p.x3.i2c -text "copy_i2p_dest" -command {i2p_copy_dest} -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) ] -sticky nsew -columnspan 1 -rowspan 1 -column 6 -row 0
-	grid [wbutton .p.x3.i2p -text "paste_i2p_dest" -command {i2p_paste_dest} -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) ] -sticky nsew -columnspan 1 -rowspan 1 -column 7 -row 0
-	}
 	update_widgets
 }
 
@@ -2915,10 +2920,10 @@ proc show_mail {} {
 	set toggle_tools {
 			if { [.m.p panecget .m.s -hide] } {
 				.m.p paneconfigure .m.s -hide false
-				.m.p paneconfigure .m.ee -hide false
+				.m.p paneconfigure .m.t -hide false
 			} else {
 				.m.p paneconfigure .m.s -hide true 
-				.m.p paneconfigure .m.ee -hide true
+				.m.p paneconfigure .m.t -hide true 
 			}
 	}
 
@@ -3000,24 +3005,23 @@ proc show_mail {} {
 	pack [wbutton .m.s.greqs -text [::msgcat::mc "req (g)"] -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) -command {show_mygroups} ] -side left
 	pack [wbutton .m.s.dl -text [::msgcat::mc "dl"] -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command {show_dlstate}] -fill both -side left
 	pack [wbutton .m.s.dbg -text [::msgcat::mc "dbg"] -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command {show_debug}] -fill both -side left
-	.m.p add [wframe .m.ee] -minsize 24 -stretch never -hide true
-	if { $::options(run_i2p) == 1 } {
-	pack [wlabel .m.ee.eedl -text "[::msgcat::mc i2p_dest]: " -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side left
-	pack [wlabel .m.ee.eed -textvar ::cur(i2p,dest) -width 40 -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side left
-	pack [wbutton .m.ee.eep -text [::msgcat::mc "add copied peer"] -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) -command {i2p_paste_dest ; sol $::formhost $::formport} ] -side right
-	pack [wbutton .m.ee.eec -text [::msgcat::mc "copy my dest"] -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) -command {i2p_copy_dest} ] -side right
+	.m.p add [panedwindow .m.t -ori ver] -minsize 24 -stretch always -hide true
+	foreach {key val} [array get ::transports "*,enable"] {
+		set name [lindex [split $key {,}] 0]
+		set copy $::transports($name,copy)
+		set paste $::transports($name,paste)
+		.m.t add [wframe .m.t_${name}] -minsize 24 -stretch never -hide false
+		pack [wlabel .m.t_${name}.eesl -text "$name: " -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side left
+		pack [wlabel .m.t_${name}.ees -textvar ::cur($name,state) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side left
+		pack [wlabel .m.t_${name}.eem -textvar ::cur($name,mstate) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side left
+		pack [wlabel .m.t_${name}.eedl -text "[::msgcat::mc ${name}_dest]: " -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side left
+		pack [wlabel .m.t_${name}.eed -textvar ::cur($name,dest) -width 40 -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side left
+		pack [wbutton .m.t_${name}.eep -text [::msgcat::mc "add copied peer"] -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) -command $paste] -side right
+		pack [wbutton .m.t_${name}.eec -text [::msgcat::mc "copy my dest"] -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) -command $copy] -side right
 	}
 	.m.p add [wframe .m.i] -minsize 24 -stretch never
-	if { $::options(run_i2p) == 1 } {
-	pack [wlabel .m.i.eesl -text "i2p: " -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side left
-	pack [wlabel .m.i.ees -textvar ::cur(i2p,state) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side left
-	if { $::options(audio_enabled) == 1 } {
-	pack [wlabel .m.i.eem -textvar ::cur(i2p,mstate) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side left
-	}
-	} else {
 	pack [wlabel .m.i.lm -text "[::msgcat::mc port]: " -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side left
 	pack [wlabel .m.i.lmp -textvar ::options(myport) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side left
-	}
 	pack [wlabel .m.i.lmode -text " | [::msgcat::mc mode]: " -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side left
 	pack [wlabel .m.i.lmodel -text "{" -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side left
 	pack [wlabel .m.i.lmodev -textvar ::cur(main,mode) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side left
@@ -6522,146 +6526,146 @@ proc update_widgets {} {
 	after 1000 update_widgets
 }
 
-proc udp_start {host port msg} {
-	#log_puts "ALL" "udp_start $host $port $msg"
-	set msg [wrap [zip -mode compress -level default $msg]]
-	set id [expr "([clock microseconds]+[string length $msg])%65536"]
-	set ::udp_out_fifo($id,host) $host
-	set ::udp_out_fifo($id,port) $port
-	set ::udp_out_fifo($id,fifo) [fifo]
-	fconfigure $::udp_out_fifo($id,fifo) -translation binary 
-	puts -nonewline $::udp_out_fifo($id,fifo) $msg
-	flush $::udp_out_fifo($id,fifo)
-	set all [expr "[string length $msg]/512+1"]
-	set p [binary format H1su1su1su1 1 $id 0 $all]
-	set p [wrap $p]
-	rawsend $::udp_out_fifo($id,host) $::udp_out_fifo($id,port) $p
-	after 100 [list udp_run $id 0 $all]
-}
-
-proc udp_run {id seq all} {
-	#log_puts "ALL" "udp_run $id $seq $all"
-	if { [llength [array names ::udp_out_fifo "$id,fifo"]] == 0 } {
-		return
-	}
-	set piece [read $::udp_out_fifo($id,fifo) 512]
-	if { $seq >= $all } {
-		after 100 [list udp_end $id $all]
-	} else {	
-		set p [binary format H1su1su1su1a* 2 $id $seq $all $piece]
-		set p [wrap $p]
-		rawsend $::udp_out_fifo($id,host) $::udp_out_fifo($id,port) $p
-		after 20 [list udp_run $id [expr {$seq+1}] $all]
-	}
-}
-
-proc udp_end {id all} {
-	#log_puts "ALL" "udp_end $id 0 $all"
-	set p [binary format H1su1su1su1 3 $id 0 $all]
-	set p [wrap $p]
-	rawsend $::udp_out_fifo($id,host) $::udp_out_fifo($id,port) $p
-	after 1000 [list rawsend $::udp_out_fifo($id,host) $::udp_out_fifo($id,port) $p]
-	after 3000 [list rawsend $::udp_out_fifo($id,host) $::udp_out_fifo($id,port) $p]
-	close $::udp_out_fifo($id,fifo)
-	array unset ::udp_out_fifo "$id*"
-}
-
-proc udp_req {host port msg} {
-	#log_puts "ALL" "udp_req $host $port $msg"
-	set msg [unwrap $msg]
-	binary scan $msg H1 type
-	#log_puts "ALL" "udp_req type $type"
-	set dmsg $msg
-	binary scan $dmsg H* debug
-	#log_puts "ALL" "udp_req debug $debug"
-	set id {}
-	if { $type == 0 } {
-		binary scan $msg a* body
-		str_req "$host $port" $body 0
-	} elseif { $type == 1 } { 
-		binary scan $msg H1su1su1su1 type id seq all
-		if { [lindex [array get ::udp_in_fifo "$id,top"] end] > 0 } {
-			return
-		}
-		#log_puts "ALL" "udp_req $id $seq $all"
-		set ::udp_in_fifo($id,host) $host
-		set ::udp_in_fifo($id,port) $port
-		set ::udp_in_fifo($id,fifo) [fifo]
-		set ::udp_in_fifo($id,rec) 0
-		set ::udp_in_fifo($id,top) 0
-		set ::udp_in_fifo($id,buf) 0
-		set ::udp_in_fifo($id,all) $all
-	} elseif { $type == 2 } {
-		binary scan $msg H1su1su1su1a* type id seq all data
-		if { $id == "" } {	
-			return
-		}
-		#log_puts "ALL" "udp_req $id $seq $all"
-		incr ::udp_in_fifo($id,rec) 1
-		#log_puts "ALL" "udp_req $id top $::udp_in_fifo($id,top) and seq $seq"
-		log_puts "ALL" "udp_req $id in buf are: [lsort [array names ::udp_in_fifo $id,buf,*]]"
-		set ::udp_in_fifo($id,buf,$seq) $data
-		if { $::udp_in_fifo($id,top) == $seq } {
-			return
-		}
-		for { set c $::udp_in_fifo($id,top) } { $c <= $seq } { incr c 1 } {
-			if { [llength [array get ::udp_in_fifo $id,buf,$c]] != 0 } {
-				log_puts "WARN" "udp_req fixing missed packets $c"
-				incr ::udp_in_fifo($id,top) 1
-				puts -nonewline $::udp_in_fifo($id,fifo) $::udp_in_fifo($id,buf,$c)
-				array unset ::udp_in_fifo "$id,buf,$c" 
-			} else {
-				break
-			}
-		}
-		flush $::udp_in_fifo($id,fifo)
-		return
-	} elseif { $type == 3 } {
-		binary scan $msg H1su1su1su1 type id seq all
-		if { [llength [array names ::udp_in_fifo "$id*"]] == 0 || $id == "" } {
-			return
-		}
-		#log_puts "ALL" "udp_req $id $seq $all"
-		log_puts "ALL" "udp_req $id rec $::udp_in_fifo($id,rec) vs all $all"	
-		#log_puts "ALL" "udp_req $id else if fifo existing and not done"
-		if { $::udp_in_fifo($id,rec) == $all } {
-			#log_puts "ALL" "udp_req $id rec $::udp_in_fifo($id,rec) == all $all"	
-			set full [read $::udp_in_fifo($id,fifo)]
-			str_req "$host $port" [zip -mode decompress [unwrap $full]] 0
-			close $::udp_in_fifo($id,fifo)
-			array unset ::udp_in_fifo "$id*"
-		} else {
-			#log_puts "ALL" "udp_req $id fifo existing and not done"
-			after 1000 [list udp_req $host $port $msg]
-		}
-	} elseif { $type == 4 } {
-		log_puts "ALL" "audio data in"
-		binary scan $msg H1a* type data
-		if { $::audio_in_fifo != "" } {
-			puts -nonewline $::audio_in_fifo $data
-			si play -blocking 0
-		}
-	} elseif { $type == 5 } {
-		log_puts "ALL" "audio msg in"
-		binary scan $msg H1H1 type op
-		if { $op == 0 } {
-			# if called, ring
-			log_puts "ALL" "audio called, ring"
-			audio_ring $host $port
-		} elseif { $op == 1 } {
-			# if accepted, start
-			log_puts "ALL" "audio accepted, start"
-			audio_start $host $port
-		} elseif { $op == 2 } {
-			# if teardown, do
-			log_puts "ALL" "audio teardown, end"
-			audio_end $host $port
-		}
-	} else {
-		binary scan $msg H* fail
-		log_puts "ERR" "udp_req weird message $fail"
-	}
-}
+#proc udp_start {host port msg} {
+#	#log_puts "ALL" "udp_start $host $port $msg"
+#	set msg [wrap [zip -mode compress -level default $msg]]
+#	set id [expr "([clock microseconds]+[string length $msg])%65536"]
+#	set ::udp_out_fifo($id,host) $host
+#	set ::udp_out_fifo($id,port) $port
+#	set ::udp_out_fifo($id,fifo) [fifo]
+#	fconfigure $::udp_out_fifo($id,fifo) -translation binary 
+#	puts -nonewline $::udp_out_fifo($id,fifo) $msg
+#	flush $::udp_out_fifo($id,fifo)
+#	set all [expr "[string length $msg]/512+1"]
+#	set p [binary format H1su1su1su1 1 $id 0 $all]
+#	set p [wrap $p]
+#	rawsend $::udp_out_fifo($id,host) $::udp_out_fifo($id,port) $p
+#	after 100 [list udp_run $id 0 $all]
+#}
+#
+#proc udp_run {id seq all} {
+#	#log_puts "ALL" "udp_run $id $seq $all"
+#	if { [llength [array names ::udp_out_fifo "$id,fifo"]] == 0 } {
+#		return
+#	}
+#	set piece [read $::udp_out_fifo($id,fifo) 512]
+#	if { $seq >= $all } {
+#		after 100 [list udp_end $id $all]
+#	} else {	
+#		set p [binary format H1su1su1su1a* 2 $id $seq $all $piece]
+#		set p [wrap $p]
+#		rawsend $::udp_out_fifo($id,host) $::udp_out_fifo($id,port) $p
+#		after 20 [list udp_run $id [expr {$seq+1}] $all]
+#	}
+#}
+#
+#proc udp_end {id all} {
+#	#log_puts "ALL" "udp_end $id 0 $all"
+#	set p [binary format H1su1su1su1 3 $id 0 $all]
+#	set p [wrap $p]
+#	rawsend $::udp_out_fifo($id,host) $::udp_out_fifo($id,port) $p
+#	after 1000 [list rawsend $::udp_out_fifo($id,host) $::udp_out_fifo($id,port) $p]
+#	after 3000 [list rawsend $::udp_out_fifo($id,host) $::udp_out_fifo($id,port) $p]
+#	close $::udp_out_fifo($id,fifo)
+#	array unset ::udp_out_fifo "$id*"
+#}
+#
+#proc udp_req {host port msg} {
+#	#log_puts "ALL" "udp_req $host $port $msg"
+#	set msg [unwrap $msg]
+#	binary scan $msg H1 type
+#	#log_puts "ALL" "udp_req type $type"
+#	set dmsg $msg
+#	binary scan $dmsg H* debug
+#	#log_puts "ALL" "udp_req debug $debug"
+#	set id {}
+#	if { $type == 0 } {
+#		binary scan $msg a* body
+#		str_req "$host $port" $body 0
+#	} elseif { $type == 1 } { 
+#		binary scan $msg H1su1su1su1 type id seq all
+#		if { [lindex [array get ::udp_in_fifo "$id,top"] end] > 0 } {
+#			return
+#		}
+#		#log_puts "ALL" "udp_req $id $seq $all"
+#		set ::udp_in_fifo($id,host) $host
+#		set ::udp_in_fifo($id,port) $port
+#		set ::udp_in_fifo($id,fifo) [fifo]
+#		set ::udp_in_fifo($id,rec) 0
+#		set ::udp_in_fifo($id,top) 0
+#		set ::udp_in_fifo($id,buf) 0
+#		set ::udp_in_fifo($id,all) $all
+#	} elseif { $type == 2 } {
+#		binary scan $msg H1su1su1su1a* type id seq all data
+#		if { $id == "" } {	
+#			return
+#		}
+#		#log_puts "ALL" "udp_req $id $seq $all"
+#		incr ::udp_in_fifo($id,rec) 1
+#		#log_puts "ALL" "udp_req $id top $::udp_in_fifo($id,top) and seq $seq"
+#		log_puts "ALL" "udp_req $id in buf are: [lsort [array names ::udp_in_fifo $id,buf,*]]"
+#		set ::udp_in_fifo($id,buf,$seq) $data
+#		if { $::udp_in_fifo($id,top) == $seq } {
+#			return
+#		}
+#		for { set c $::udp_in_fifo($id,top) } { $c <= $seq } { incr c 1 } {
+#			if { [llength [array get ::udp_in_fifo $id,buf,$c]] != 0 } {
+#				log_puts "WARN" "udp_req fixing missed packets $c"
+#				incr ::udp_in_fifo($id,top) 1
+#				puts -nonewline $::udp_in_fifo($id,fifo) $::udp_in_fifo($id,buf,$c)
+#				array unset ::udp_in_fifo "$id,buf,$c" 
+#			} else {
+#				break
+#			}
+#		}
+#		flush $::udp_in_fifo($id,fifo)
+#		return
+#	} elseif { $type == 3 } {
+#		binary scan $msg H1su1su1su1 type id seq all
+#		if { [llength [array names ::udp_in_fifo "$id*"]] == 0 || $id == "" } {
+#			return
+#		}
+#		#log_puts "ALL" "udp_req $id $seq $all"
+#		log_puts "ALL" "udp_req $id rec $::udp_in_fifo($id,rec) vs all $all"	
+#		#log_puts "ALL" "udp_req $id else if fifo existing and not done"
+#		if { $::udp_in_fifo($id,rec) == $all } {
+#			#log_puts "ALL" "udp_req $id rec $::udp_in_fifo($id,rec) == all $all"	
+#			set full [read $::udp_in_fifo($id,fifo)]
+#			str_req "$host $port" [zip -mode decompress [unwrap $full]] 0
+#			close $::udp_in_fifo($id,fifo)
+#			array unset ::udp_in_fifo "$id*"
+#		} else {
+#			#log_puts "ALL" "udp_req $id fifo existing and not done"
+#			after 1000 [list udp_req $host $port $msg]
+#		}
+#	} elseif { $type == 4 } {
+#		log_puts "ALL" "audio data in"
+#		binary scan $msg H1a* type data
+#		if { $::audio_in_fifo != "" } {
+#			puts -nonewline $::audio_in_fifo $data
+#			si play -blocking 0
+#		}
+#	} elseif { $type == 5 } {
+#		log_puts "ALL" "audio msg in"
+#		binary scan $msg H1H1 type op
+#		if { $op == 0 } {
+#			# if called, ring
+#			log_puts "ALL" "audio called, ring"
+#			audio_ring $host $port
+#		} elseif { $op == 1 } {
+#			# if accepted, start
+#			log_puts "ALL" "audio accepted, start"
+#			audio_start $host $port
+#		} elseif { $op == 2 } {
+#			# if teardown, do
+#			log_puts "ALL" "audio teardown, end"
+#			audio_end $host $port
+#		}
+#	} else {
+#		binary scan $msg H* fail
+#		log_puts "ERR" "udp_req weird message $fail"
+#	}
+#}
 
 proc send {host port msg} {
 	if { $::cur(net,on) != 1 } {
@@ -6669,38 +6673,43 @@ proc send {host port msg} {
 	}
 	log_puts "ALL" "send $host $port [join $msg]"
 	#udp_start $host $port $msg
-	#after idle [list tcp_send $host $port $msg]
-	if { $::options(run_i2p) == 1 } {
-		after idle [list i2p_send $host $msg]
-	} else {
-		after idle [list tcp_send $host $port $msg]
+	
+	set htran [lindex [split $host {/}] 0]
+	set haddr [lindex [split $host {/}] 1]
+	
+	if { $htran == "tcp" && [array get ::transports] == {} } {
+		after idle [list tcp_send $haddr $port $msg]
+	}
+	foreach {key val} [array get ::transports "$htran,enable"] {
+		set name [lindex [split $key {,}] 0]
+		after idle [list $::transports($name,send) $haddr $port $msg]
 	}
 }
 
-proc rawsend {host port msg} {
-	if { $::cur(net,on) != 1 } {
-		return
-	}
-	#log_puts "ALL" "send"
-	if { $host == "" || $port == "" || $msg == "" } {
-		log_puts "ERR" "ERR something empty (h $host p $port), won't send $msg"
-		return
-	}
-	if { ($host == "127.0.0.1" || $host == "localhost") && $port == $::options(myport) } {
-		log_puts "ERR" "ERR won't send to myself"
-		return
-	}
-	#set start [clock microseconds]
-	set s [udp_open $::options(myport) reuse]
-	#log_puts "ALL" "sending to $host $port msg $msg"
-	#fconfigure $s -buffering line -remote [list $host $port]
-	fconfigure $s -translation binary -remote [list $host $port]
-	puts $s $msg
-	#flush $s
-	close $s	
-	#set end [clock microseconds]
-	#log_puts "ALL" "time send [expr {$end-$start}]"
-}
+#proc rawsend {host port msg} {
+#	if { $::cur(net,on) != 1 } {
+#		return
+#	}
+#	#log_puts "ALL" "send"
+#	if { $host == "" || $port == "" || $msg == "" } {
+#		log_puts "ERR" "ERR something empty (h $host p $port), won't send $msg"
+#		return
+#	}
+#	if { ($host == "127.0.0.1" || $host == "localhost") && $port == $::options(myport) } {
+#		log_puts "ERR" "ERR won't send to myself"
+#		return
+#	}
+#	#set start [clock microseconds]
+#	set s [udp_open $::options(myport) reuse]
+#	#log_puts "ALL" "sending to $host $port msg $msg"
+#	#fconfigure $s -buffering line -remote [list $host $port]
+#	fconfigure $s -translation binary -remote [list $host $port]
+#	puts $s $msg
+#	#flush $s
+#	close $s	
+#	#set end [clock microseconds]
+#	#log_puts "ALL" "time send [expr {$end-$start}]"
+#}
 
 proc tcp_send {host port msg} {
 	log_puts "ALL" "tcp_send"
@@ -6854,7 +6863,7 @@ proc tcp_send_res {s host port sid} {
 	set port [lindex $res 0]
 	set res [lrange $res 1 end]
 	}
-	set peer "$host $port"
+	set peer "tcp/${host} $port"
 	if { $res == {} } {
 		log_puts "ERR" "empty message"
 	}
@@ -6885,24 +6894,24 @@ proc tcp_send_res {s host port sid} {
 	log_puts "ALL" "CLIENT RES DONE"
 }
 
-proc listen_handler {c} {
-	set start [clock microseconds]
-	set packet [read $c]
-	set peer [fconfigure $c -peer]
-	#log_puts "ALL" "INCOMING: $peer / ([string length $packet]) {$packet}"
-	if { $packet == {} } {
-		log_puts "ERR" "empty packet"
-		return
-	}
-	if { $packet != 0 } {
-		#set start [clock microseconds]
-		udp_req [lindex $peer 0] [lindex $peer 1] $packet
-		#set end [clock microseconds]
-		#log_puts "ALL" "time str_req [expr {$end-$start}]"
-	} else {
-		log_puts "ERR" "wrong, won't process"
-	}
-}
+#proc listen_handler {c} {
+#	set start [clock microseconds]
+#	set packet [read $c]
+#	set peer [fconfigure $c -peer]
+#	#log_puts "ALL" "INCOMING: $peer / ([string length $packet]) {$packet}"
+#	if { $packet == {} } {
+#		log_puts "ERR" "empty packet"
+#		return
+#	}
+#	if { $packet != 0 } {
+#		#set start [clock microseconds]
+#		udp_req [lindex $peer 0] [lindex $peer 1] $packet
+#		#set end [clock microseconds]
+#		#log_puts "ALL" "time str_req [expr {$end-$start}]"
+#	} else {
+#		log_puts "ERR" "wrong, won't process"
+#	}
+#}
 
 proc tcp_listen_handler {c host port} {
 	set start [clock microseconds]
@@ -6946,7 +6955,7 @@ proc tcp_listen_handler_cmd {c host port sid} {
 	set port [lindex $cmd 0]
 	set cmd [lrange $cmd 1 end]
 	}
-	set peer "$host $port"
+	set peer "tcp/${host} $port"
 	if { $cmd == {} } {
 		log_puts "ERR" "empty message"
 	}
@@ -6980,13 +6989,13 @@ proc tcp_listen_handler_cmd {c host port sid} {
 	#log_puts "ALL" "SERVER CMD DONE"
 }
 
-proc listen {} {
-	set c [udp_open $::options(myport) reuse]
-	#fconfigure $c -buffering line -translation binary
-	fconfigure $c -translation binary
-	fileevent $c readable [list ::listen_handler $c]
-	return $c
-}
+#proc listen {} {
+#	set c [udp_open $::options(myport) reuse]
+#	#fconfigure $c -buffering line -translation binary
+#	fconfigure $c -translation binary
+#	fileevent $c readable [list ::listen_handler $c]
+#	return $c
+#}
 
 proc tcp_listen {} {
 	set c [socket -server [list tcp_listen_handler] $::options(myport)]
@@ -7163,7 +7172,7 @@ proc closest_in_buckets {key num} {
 # cmds
 
 proc sol {host port} {
-	log_puts "ALL" "sol"
+	log_puts "ALL" "sol $host $port"
 	send $host $port "SOL 0 ${::me(id)} ${::me(pubkey)}"
 }
 
@@ -7199,13 +7208,16 @@ proc str_create {req host port key value} {
 		log_puts "ERR" "str_create empty host $host or port $port"
 		return
 	}
-	if { ($host == "127.0.0.1" || $host == "localhost") && $port == $::options(myport) && $::options(run_i2p) != 1 } {
+	if { ($host == "tcp/127.0.0.1" || $host == "tcp/localhost") && $port == $::options(myport) } {
 		log_puts "ERR" "str_create can't send to myself host $host port $port"
 		return
 	}
-	if { $::cur(i2p,dest) == $host && $::options(run_i2p) == 1 } {
-		log_puts "ERR" "str_create can't send to myself host $host"
-		return
+	foreach {tkey tval} [array get ::transports "*,enable"] {
+		set name [lindex [split $tkey {,}] 0]
+		if { "${name}/$::cur($name,dest)" == $host } {
+			log_puts "ERR" "str_create transport $name can't send to myself host $host"
+			return
+		}
 	}
 	set s [clock microseconds]
 	if { $req == "PING" } {
@@ -7253,6 +7265,7 @@ proc str_start {s} {
 }
 
 proc req_ping {f s} {
+	log_puts "ALL" "req_ping $f $s"
 	send [lindex [split $f { }] 0] [lindex [split $f { }] 1] [list "RES" $s "OK" $::me(pubkey)]
 	return
 }
@@ -7653,9 +7666,7 @@ proc req_genc {f s r a tcp} {
 
 proc req_phone {f s r a} {
 	log_puts "ALL" "req_phone"
-	if { $::options(run_i2p) == 1 } {
-		audio_dialog $r $a
-	}
+	audio_dialog $r $a
 	return
 }
 
@@ -7789,12 +7800,16 @@ proc str_ping {s r a} {
 		log_puts "ALL" "PING $s $r $a"
 		array set ::p [list "$s,state" "DONE" "$s,change" [clock microseconds]]
 		set k [crypto_cksum [unwrap $a]] 
+		log_puts "ALL" "str_ping k $k"
 		if { $k != $::me(id) && $a != "" && $k == $::p($s,key) } {
 			set peer "$k:$::p($s,host):$::p($s,port):$a"
 			log_puts "ALL" "put to peerstore [list $k $peer]"
 			array set ::peerstore [list $k $peer]
 			sol $::p($s,host) $::p($s,port)
 			put_to_buckets $k
+		} else {
+			log_puts "ALL" "str_ping $k vs $::p($s,key) something wrong with OK"
+		
 		}
 	} else {
 		if { [lindex [array get ::p "$s,state" ] 1] == "DONE" } {
@@ -8184,12 +8199,12 @@ proc ml_personbrowse {contact} {
 
 proc ml_genc {peerid host port msg response} {
 	log_puts "ALL" "ml_genc peerid $peerid host $host port $port"
-	set host [string map {{localhost} {127.0.0.1}} $host]
+	set host [string map {{tcp/localhost} {tcp/127.0.0.1}} $host]
 	#log_puts "ALL" "ml_genc peerid $peerid host $host port $port msg [string range $msg 0 127]"
 	set pubkey {}
 	if { $peerid == {} } {	
 		log_puts "ALL" "ml_genc empty peerid"
-		set peers [lsort -unique [lsearch -all -inline [array get ::peerstore] "*:$host:$port:*"]]
+		set peers [lsort -unique [lsearch -all -inline [array get ::peerstore] "*$host:$port:*"]]
 		log_puts "ALL" "ml_genc peers $peers"
 		set len [llength $peers]
 		log_puts "ALL" "ml_genc len $len"
