@@ -291,6 +291,8 @@ proc net_toggle {} {
 			log_puts "ALL" "listen res $res"
 			catch { sys_upnpc $::options(myport) } res
 			log_puts "ALL" "upnpc res $res"
+		} else {
+			set ::options(myport) 0
 		}
 		foreach {key val} [array get ::transports "*,enable"] {
 			set name [lindex [split $key {,}] 0]
@@ -3020,9 +3022,10 @@ proc show_mail {} {
 		#pack [wbutton .m.t_${name}.eec -text [::msgcat::mc "copy my dest"] -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) -command $copy] -side right
 	}
 	.m.p add [wframe .m.i] -minsize 24 -stretch never
-	pack [wlabel .m.i.lm -text "[::msgcat::mc port]: " -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side left
-	pack [wlabel .m.i.lmp -textvar ::options(myport) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side left
-	pack [wlabel .m.i.lmode -text " | [::msgcat::mc mode]: " -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side left
+	#pack [wlabel .m.i.lm -text "[::msgcat::mc port]: " -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side left
+	#pack [wlabel .m.i.lmp -textvar ::options(myport) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side left
+	#pack [wlabel .m.i.lsep -text " | " -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side left
+	pack [wlabel .m.i.lmode -text "[::msgcat::mc mode]: " -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side left
 	pack [wlabel .m.i.lmodel -text "{" -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side left
 	pack [wlabel .m.i.lmodev -textvar ::cur(main,mode) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side left
 	pack [wlabel .m.i.lmoder -text "}" -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side left
@@ -6173,11 +6176,13 @@ proc copy_my_contact {} {
 	foreach {key val} [array get ::transports "*,enable"] {
 		set tran [lindex [split $key {,}] 0]
 		if { $tran == {} } {
+			log_puts "ERR" "copy_my_contact empty tran"
 			continue	
 		}
 		set addr {}
 		catch { set addr $::cur($tran,dest) }
 		if { $addr == {} } {
+			log_puts "ERR" "copy_my_contact empty addr"
 			continue
 		}
 		clipboard append "[wrap $::me(contact)]:[wrap ${tran}/${addr}]"
@@ -6219,14 +6224,16 @@ proc add_copied_contact {} {
 	set s [split [clipboard get] {:}]
 	}
 	if { $s == {} } {
+		log_puts "ERR" "add_copied_contact empty clipboard"
 		return
 	}
 	set contact [unwrap [lindex $s 0]]
 	set host [unwrap [lindex $s 1]]
 	if { $contact == {} || $host == {} } {
+		log_puts "ERR" "add_copied_contact empty contact $contact or host $host"
 		return
 	} 
-	set c [contact_to_dict $s]
+	set c [contact_to_dict $contact]
 	if { $c == {} } {
 		return
 	} 
@@ -6235,6 +6242,7 @@ proc add_copied_contact {} {
 	}
 	sol $host 0
 	chat_add $contact
+	array set ::contacts [list [dict get $c peerid] $contact]
 	return
 }
 
