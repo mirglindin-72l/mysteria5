@@ -2968,12 +2968,7 @@ proc show_mail {} {
 	#pack [wbutton .m.igc.cbc -text "^p" -width 2 -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) -command {copy_contact} ] -side right
 	#pack [wbutton .m.igc.cbga -text "+g" -width 2 -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) -command {add_copied_group} ] -side right
 	#pack [wbutton .m.igc.cbgc -text "^g" -width 2 -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) -command {copy_group} ] -side right
-	pack [wbutton .m.igc.togg -text "+" -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) -command "$toggle_tools" ] -side right
-	pack [wlabel .m.igc.sep0 -text " " -width 1 -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -side right
 	pack [wbutton .m.igc.detail -text [::msgcat::mc "i"] -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command $detail_cmd] -fill both -side right
-	#pack [wlabel .m.igc.sep1 -text " " -width 1 -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -side right
-	#pack [wbutton .m.igc.chat -text [::msgcat::mc "chat"]  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command $chat_cmd] -fill both -side right
-	#pack [wbutton .m.igc.doc -text [::msgcat::mc "doc"]  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command $doc_cmd] -fill both -side right
 	pack [wlabel .m.igc.mr -text ">" -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side right 
 	pack [wlabel .m.igc.line_r -textvar ::topline(main,r) -width 40 -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side right
 	pack [wlabel .m.igc.ml -text "<" -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side right
@@ -3029,6 +3024,8 @@ proc show_mail {} {
 	pack [wlabel .m.i.lmodel -text "{" -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side left
 	pack [wlabel .m.i.lmodev -textvar ::cur(main,mode) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side left
 	pack [wlabel .m.i.lmoder -text "}" -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side left
+	pack [wbutton .m.i.togg -text "+" -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) -command "$toggle_tools" ] -side right
+	pack [wlabel .m.i.sep -text " " -width 1 -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -side right
 	pack [wbutton .m.i.net -textvariable ::cur(net,l) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) -command {net_toggle} ] -side right
 	pack [wlabel .m.i.mr -text ">" -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side right 
 	pack [wlabel .m.i.lme -textvar ::me(id) -width 40 -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side right
