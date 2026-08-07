@@ -1,5 +1,4 @@
 package require cksum
-source "./log.tcl"
 proc delta {f t} {
 	set flines [split $f "\n"]
 	set tlines [split $t "\n"]
@@ -225,6 +224,7 @@ proc apply_delta {f p} {
 }
 
 proc test_delta {} {
+source "./log.tcl"
 set t0 {}
 append t0 "qwe" 
 append t0 "\n" 
