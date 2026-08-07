@@ -2,6 +2,7 @@
 set ::log_level 2
 set ::log_path [file join "." "log_[clock format [clock seconds] -format {%Y%m%d_%H%M%S}].log"]
 set ::log [open $::log_path w]
+set ::loglist {}
 puts "Open log at $::log_path"
 
 
@@ -25,6 +26,9 @@ proc log_puts {lvl msg} {
 		puts $::log "$tw" 
 		flush $::log
 		puts "$tw" 
+
+		set ::loglist [linsert $::loglist 0 "$tw"]
+		set ::loglist [lrange $::loglist 0 128]
 	}
 	return
 }

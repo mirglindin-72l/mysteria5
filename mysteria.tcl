@@ -79,6 +79,7 @@ set ::cur(main,person,l) {}
 set ::cur(play,running) {}
 set ::cur(record,running) {}
 set ::topline(main,l) {}
+set ::topline(main,c) {}
 set ::topline(main,r) {}
 set ::buddylist(main,l) {}
 set ::buddylist(main,k) {}
@@ -206,8 +207,6 @@ proc launch {} {
 	#load_keys
 	load_sig
 
-	net_toggle
-
 	foreach {key group} [array get ::jgroups] {
 		ml_replay $group
 	}
@@ -216,12 +215,6 @@ proc launch {} {
 	#archive_mlhdr $oneyear
 	#archive_mlphdr $oneyear
 	#archive_mailnews $oneyear
-
-	check_waitvalues
-	check_gchatqueue
-	check_peers
-
-	after 60000 [list net_update]
 	
 	every 1000 {
 		set ::tick [clock seconds]
@@ -257,6 +250,10 @@ proc launch {} {
 
 proc sys_upnpc {port} {
 	log_puts "ALL" "sys_upnpc"
+	if { $::cur(net,on) != 1 } {
+		log_puts "ERR" "sys_upnpc networking not enabled, return"
+		return
+	}
 	if { $::options(run_upnpc) != 1 } {
 		log_puts "ERR" "sys_upnpc disabled"
 		return
@@ -268,6 +265,11 @@ proc sys_upnpc {port} {
 }
 
 proc net_update {} {
+	log_puts "ALL" "net_update"
+	if { $::cur(net,on) != 1 } {
+		log_puts "ERR" "net_update networking not enabled, return"
+		return
+	}
 	sanitize_stores
 	hash_files
 	sc_setsources
@@ -2798,12 +2800,6 @@ proc show_mail {} {
 		}
 	}
 
-	#set gr_cmd {
-	#	if { $::cur(main,mode) == {g} && $::cur(main,group,h) != "" } {
-	#		show_gredit [clock microseconds] {} {}
-	#	}
-	#}
-
 	set reply_cmd {
 		if { $::cur(main,mode) == {m} } {	
 			show_editor [mail_header_to_contact [lindex $::msglist(main,k) [lindex [.m.x.ls index active] 0]]]
@@ -2930,8 +2926,6 @@ proc show_mail {} {
 	}
 
 	pack [panedwindow .m.p -ori vert] -fill both -expand 1
-	#.m.p add [wframe .m.igc] -stretch never
-	#pack [wlabel .m.igc.line -textvar ::topline(main,l) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side left 
 	.m.p add [wframe .m.b] -minsize 24 -stretch never
 	pack [wbutton .m.b.gt -text [::msgcat::mc "read"]  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command $read_cmd] -fill both -side left
 	pack [wbutton .m.b.grr -text [::msgcat::mc "reply"]  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command "$reply_cmd ; $filter_cmd" ] -fill both -side left
@@ -2945,15 +2939,8 @@ proc show_mail {} {
 	pack [wlabel .m.b.sep2 -text " " -width 1 -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -side left 
 	pack [wbutton .m.b.chat -text [::msgcat::mc "chat"]  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command $chat_cmd] -fill both -side left
 	pack [wbutton .m.b.doc -text [::msgcat::mc "doc"]  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command $doc_cmd] -fill both -side left
-	#pack [wbutton .m.b.dl -text "dl" -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command {show_dlstate}] -fill both -side left
-	#pack [wbutton .m.b.dbg -text "dbg" -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command {show_debug}] -fill both -side left
-	#pack [wbutton .m.b.mail -text "mail" -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command $mail_cmd] -fill both -side left
-	#pack [wbutton .m.b.gr -text "gr" -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command $gr_cmd] -fill both -side left
-	#pack [wbutton .m.b.browse -text "browse" -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command $browse_cmd] -fill both -side left
-	#pack [wbutton .m.b.detail -text "i" -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command $detail_cmd] -fill both -side left
 	pack [wlabel .m.b.sep3 -text " " -width 1 -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -side left 
 	pack [wbutton .m.b.recent -text [::msgcat::mc "recent"] -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command "show_recent none none none"] -fill both -side left
-	#pack [wlabel .m.b.menu -text "menu"  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) ] -fill both -side right
 	pack [wbutton .m.b.gtr -text [::msgcat::mc "gather"]  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command $search_cmd] -fill both -side right
 	pack [wbutton .m.b.net -text [::msgcat::mc "net"]  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command "net_update"] -fill both -side right
 	#pack [wbutton .m.b.gtrs -text [::msgcat::mc "stop"]  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command $stop_cmd] -fill both -side right
@@ -2961,24 +2948,19 @@ proc show_mail {} {
 	pack [wbutton .m.b.upd -text [::msgcat::mc "filter"]  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command $filter_cmd] -fill both -side right
 	pack [wentry .m.b.g -textvariable ::searchfield(main) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -selectforeground $::options(basecolor) -selectbackground $::options(hilightcolor) -font $::options(font) -width 20 ] -fill both -side right
 	pack [wlabel .m.b.sep4 -text " " -width 1 -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -side right
-	.m.p add [wframe .m.igc] -stretch never
-	#pack [wentry .m.igc.g -textvariable ::searchfield(main) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -selectforeground $::options(basecolor) -selectbackground $::options(hilightcolor) -font $::options(font) -width 12 ] -fill both -side left
-	#pack [wbutton .m.igc.upd -text "f"  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command $filter_cmd] -fill both -side left
-	#pack [wbutton .m.igc.cba -text "+p" -width 2 -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) -command {add_copied_contact} ] -side right
-	#pack [wbutton .m.igc.cbc -text "^p" -width 2 -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) -command {copy_contact} ] -side right
-	#pack [wbutton .m.igc.cbga -text "+g" -width 2 -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) -command {add_copied_group} ] -side right
-	#pack [wbutton .m.igc.cbgc -text "^g" -width 2 -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) -command {copy_group} ] -side right
+	.m.p add [wframe .m.igc] -minsize 24 -stretch never
 	pack [wbutton .m.igc.detail -text [::msgcat::mc "i"] -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command $detail_cmd] -fill both -side right
 	pack [wlabel .m.igc.mr -text ">" -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side right 
 	pack [wlabel .m.igc.line_r -textvar ::topline(main,r) -width 40 -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side right
 	pack [wlabel .m.igc.ml -text "<" -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side right
-	pack [wlabel .m.igc.line -textvar ::topline(main,l) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side left
+	pack [wlabel .m.igc.line_c -textvar ::topline(main,c) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side right
+	pack [wlabel .m.igc.line_l -textvar ::topline(main,l) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side left
 	.m.p add [wframe .m.x] -minsize 24 -stretch always
 	pack [wscrollbar .m.x.y -activebackground $::options(hilightcolor)  -troughcolor $::options(hilightcolor)  -command "tl_yview 1 .m.x.ls"] -fill y -side right
 	pack [listbox .m.x.ls -listvariable ::msglist(main,l) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -selectforeground $::options(basecolor) -selectbackground $::options(hilightcolor) -font $::options(listfont) -width 60 -height 20 -yscrollc ".m.x.y set"] -fill both -expand 1 -side right
-	#.m.p add [wframe .m.d] -stretch always
-	#pack [wscrollbar .m.d.y -activebackground $::options(hilightcolor)  -troughcolor $::options(hilightcolor)  -command ".m.d.l yview"] -fill y -side right
-	#pack [listbox .m.d.l -listvariable ::dllist -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -selectforeground $::options(basecolor) -selectbackground $::options(hilightcolor) -font $::options(listfont) -height 3 -yscrollc ".m.d.y set"] -fill both -expand 1 -side right
+	.m.p add [wframe .m.d] -stretch always
+	pack [wscrollbar .m.d.y -activebackground $::options(hilightcolor)  -troughcolor $::options(hilightcolor)  -command ".m.d.l yview"] -fill y -side right
+	pack [listbox .m.d.l -listvariable ::loglist -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -selectforeground $::options(basecolor) -selectbackground $::options(hilightcolor) -font $::options(listfont) -height 3 -yscrollc ".m.d.y set"] -fill both -expand 1 -side right
 	.m.p add [wframe .m.f] -minsize 24 -stretch always -hide $::options(hide_pane) 
 	pack [wscrollbar .m.f.y -activebackground $::options(hilightcolor)  -troughcolor $::options(hilightcolor)  -command ".m.f.t yview"] -fill y -side right
 	pack [text .m.f.t -wrap word -yscrollc ".m.f.y set" \
@@ -3061,7 +3043,8 @@ proc show_mail {} {
 	.m.f.t tag bind mysm <1> $cmd_mysm
 
 	#bind .m.b.menu <1> {+ tk_popup .nmenu %X %Y}
-	bind .m.igc.line <3> {+ tk_popup .nmenu %X %Y}
+	bind .m.igc.line_l <3> {+ tk_popup .nmenu %X %Y}
+	bind .m.igc.line_c <3> {+ tk_popup .nmenu %X %Y}
 	bind .m.igc.ml <3> {+ tk_popup .nmenu %X %Y}
 	bind .m.igc.line_r <3> {+ tk_popup .nmenu %X %Y}
 	bind .m.igc.mr <3> {+ tk_popup .nmenu %X %Y}
@@ -6218,7 +6201,7 @@ proc copy_contact {} {
 proc add_copied_contact {} {
 	set s {}
 	catch {
-	set s [split [clipboard get] {:}]
+	set s [split [string trim [clipboard get]] {:}]
 	}
 	if { $s == {} } {
 		log_puts "ERR" "add_copied_contact empty clipboard"
@@ -6263,7 +6246,7 @@ proc copy_group {} {
 proc add_copied_group {} {
 	set group {}
 	catch {
-	set group [clipboard get]
+	set group [string trim [clipboard get]]
 	}
 	set g [ml_groupdict $group]
 	if { $g == {} } {
@@ -6304,6 +6287,10 @@ proc set_peer_status {id type comment last} {
 
 proc send_my_status {type comment} {
 	log_puts "ALL" "send_my_status $type $comment"
+	if { $::cur(net,on) != 1 } {
+		log_puts "ERR" "send_my_status networking not enabled, return"
+		return
+	}
 	foreach hash [array names ::buddies] {
 		log_puts "ALL" "status->chat_notice $hash {STATUS $type/$comment}"
 		gchat_send chat $hash {} [clock microseconds] "RENEW" "ask"
@@ -6705,6 +6692,7 @@ proc update_widgets {} {
 
 proc send {host port msg} {
 	if { $::cur(net,on) != 1 } {
+		log_puts "ERR" "send networking not enabled, return"
 		return
 	}
 	log_puts "ALL" "send $host $port [join $msg]"
@@ -7240,6 +7228,10 @@ proc find_value {s host port key} {
 
 proc str_create {req host port key value} {
 	log_puts "ALL" "str_create"
+	if { $::cur(net,on) != 1 } {
+		log_puts "ERR" "str_create networking not enabled"
+		return
+	}
 	if { $host == "" || $port == "" } {
 		log_puts "ERR" "str_create empty host $host or port $port"
 		return
@@ -7275,6 +7267,10 @@ proc str_start {s} {
 	log_puts "ALL" "str_start"
 	if { $s == "" } {
 		log_puts "ERR" "no s"
+		return
+	}
+	if { $::cur(net,on) != 1 } {
+		log_puts "ERR" "str_start networking not enabled"
 		return
 	}
 	if { $::p($s,state) != "START" } {
@@ -7741,6 +7737,10 @@ proc req_give {f s r a} {
 
 proc str_req {f p tcp} {	
 	log_puts "ALL" "str_req $f $p"
+	if { $::cur(net,on) != 1 } {
+		log_puts "ERR" "str_start networking not enabled"
+		return
+	}
 	#log_puts "ALL" "STR_REQ $p"
 	set m [lindex $p 0]
 	set s [lindex $p 1]
@@ -8168,6 +8168,10 @@ proc ml_personhead {contact} {
 	if { $contact == {} } {
 		return
 	}
+	if { $::cur(net,on) != 1 } {
+		log_puts "ERR" "ml_personhead networking not enabled, return"
+		return
+	}
 	foreach {hash con} [array get ::buddies] {
 		if { $con == $contact } {
 			gchat_send chat $hash {} [clock microseconds] "RENEW" "ask"
@@ -8207,6 +8211,11 @@ proc ml_personhead {contact} {
 }
 
 proc ml_personbrowse {contact} {
+	log_puts "ALL" "ml_personbrowse"
+	if { $::cur(net,on) != 1 } {
+		log_puts "ERR" "ml_personbrowse networking not enabled, return"
+		return
+	}
 	set c [contact_to_dict $contact]
 	set peerid [dict get $c peerid]
 	set foundpeers [lsort -unique -stride 2 -index end [array get ::peerstore "$peerid*"]]
@@ -8235,6 +8244,10 @@ proc ml_personbrowse {contact} {
 
 proc ml_genc {peerid host port msg response} {
 	log_puts "ALL" "ml_genc peerid $peerid host $host port $port"
+	if { $::cur(net,on) != 1 } {
+		log_puts "ERR" "ml_genc networking not enabled, return"
+		return
+	}
 	set host [string map {{tcp/localhost} {tcp/127.0.0.1}} $host]
 	#log_puts "ALL" "ml_genc peerid $peerid host $host port $port msg [string range $msg 0 127]"
 	set pubkey {}
@@ -8334,6 +8347,10 @@ proc ml_genc {peerid host port msg response} {
 
 proc ml_grouphead {group} {
 	log_puts "ALL" "ml_grouphead start"
+	if { $::cur(net,on) != 1 } {
+		log_puts "ERR" "ml_grouphead networking not enabled, return"
+		return
+	}
 	#set start [clock microseconds]
 	set g [ml_groupdict $group]
 	set gid [dict get $g gid]
@@ -8715,13 +8732,15 @@ proc ml_showlist {mode obj} {
 	"g" {
 		set group $obj
 		ml_replay [lindex [array get ::jgroups $group] end]
-		catch { set ::topline(main,l) "[::msgcat::mc group]: $::cur(main,group,l)" ; append ::topline(main,l) " [disp_rule $group $::me(id)]" }
+		catch { set ::topline(main,l) "[::msgcat::mc group]" ; append ::topline(main,l) " [disp_rule $group $::me(id)] :" }
+		catch { set ::topline(main,c) "$::cur(main,group,l)" }
 		catch { set ::topline(main,r) "[dict get [ml_groupdict $::cur(main,group,h)] gid]" }
 		set hdrs [lrange [ml_get_hdrs 31 mlhdr $group] 2 end]
 	}
 	"p" {
 		set person $obj	
-		catch { set ::topline(main,l) "[::msgcat::mc person]: $::cur(main,person,l)" }
+		catch { set ::topline(main,l) "[::msgcat::mc person]:" }
+		catch { set ::topline(main,c) "$::cur(main,person,l)" }
 		catch { set ::topline(main,r) "[dict get [contact_to_dict $::cur(main,person,h)] peerid]" }
 		set hdrs [lrange [ml_get_hdrs 31 mlphdr $person] 2 end]
 	}

@@ -61,6 +61,10 @@ proc i2p_save {} {
 
 proc i2p_start {} {
 	log_puts "ALL" "i2p_start start"
+	if { $::cur(net,on) != 1 } {
+		log_puts "ERR" "i2p_start networking not enabled, return"
+		return
+	}
 	catch {
 	set ::cur(i2p,sock) [socket 127.0.0.1 $::options(i2p_port)]
 	}
@@ -292,6 +296,8 @@ proc i2p_handler {c} {
 			}
 			after 60000 i2p_maintain_data
 			i2p_mstart
+			### update network state 
+			after 5000 net_update
 		} else {
 			log_puts "ALL" "i2p_handler something went wrong"
 			i2p_end
