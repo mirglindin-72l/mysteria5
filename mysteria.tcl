@@ -2968,7 +2968,21 @@ proc show_mail {} {
 		-selectforeground {#6090c0} -selectbackground $::options(hilightcolor) \
 		-padx 5 -pady 3 -height 20 -width 60 -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(listfont)] \
 		-fill both -expand 1 -side right
-	.m.p add [wframe .m.s] -minsize 24 -stretch never -hide true
+	.m.p add [panedwindow .m.t -ori ver] -minsize 24 -stretch always -hide false 
+	foreach {key val} [array get ::transports "*,enable"] {
+		set name [lindex [split $key {,}] 0]
+		set copy $::transports($name,copy)
+		set paste $::transports($name,paste)
+		.m.t add [wframe .m.t_${name}] -minsize 24 -stretch never -hide false
+		pack [wlabel .m.t_${name}.eesl -text "$name: " -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side left
+		pack [wlabel .m.t_${name}.ees -textvar ::cur($name,state) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side left
+		pack [wlabel .m.t_${name}.eem -textvar ::cur($name,mstate) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side left
+		pack [wlabel .m.t_${name}.eedl -text "[::msgcat::mc ${name}_dest]: " -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side left
+		pack [wlabel .m.t_${name}.eed -textvar ::cur($name,dest) -width 40 -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side left
+		#pack [wbutton .m.t_${name}.eep -text [::msgcat::mc "add copied peer"] -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) -command $paste] -side right
+		#pack [wbutton .m.t_${name}.eec -text [::msgcat::mc "copy my dest"] -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) -command $copy] -side right
+	}
+	.m.p add [wframe .m.s] -minsize 24 -stretch never
 	pack [wbutton .m.s.cbm -text [::msgcat::mc "^ me"] -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) -command {copy_my_contact} ] -side right
 	pack [wlabel .m.s.sep0 -text " " -width 1 -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -side right
 	pack [wbutton .m.s.cba -text [::msgcat::mc "+ (p)"] -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) -command {add_copied_contact} ] -side right
@@ -2985,24 +2999,7 @@ proc show_mail {} {
 	pack [wbutton .m.s.greqs -text [::msgcat::mc "req (g)"] -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) -command {show_mygroups} ] -side left
 	pack [wbutton .m.s.dl -text [::msgcat::mc "dl"] -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command {show_dlstate}] -fill both -side left
 	pack [wbutton .m.s.dbg -text [::msgcat::mc "dbg"] -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command {show_debug}] -fill both -side left
-	.m.p add [panedwindow .m.t -ori ver] -minsize 24 -stretch always -hide true
-	foreach {key val} [array get ::transports "*,enable"] {
-		set name [lindex [split $key {,}] 0]
-		set copy $::transports($name,copy)
-		set paste $::transports($name,paste)
-		.m.t add [wframe .m.t_${name}] -minsize 24 -stretch never -hide false
-		pack [wlabel .m.t_${name}.eesl -text "$name: " -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side left
-		pack [wlabel .m.t_${name}.ees -textvar ::cur($name,state) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side left
-		pack [wlabel .m.t_${name}.eem -textvar ::cur($name,mstate) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side left
-		pack [wlabel .m.t_${name}.eedl -text "[::msgcat::mc ${name}_dest]: " -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side left
-		pack [wlabel .m.t_${name}.eed -textvar ::cur($name,dest) -width 40 -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side left
-		#pack [wbutton .m.t_${name}.eep -text [::msgcat::mc "add copied peer"] -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) -command $paste] -side right
-		#pack [wbutton .m.t_${name}.eec -text [::msgcat::mc "copy my dest"] -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) -command $copy] -side right
-	}
 	.m.p add [wframe .m.i] -minsize 24 -stretch never
-	#pack [wlabel .m.i.lm -text "[::msgcat::mc port]: " -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side left
-	#pack [wlabel .m.i.lmp -textvar ::options(myport) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side left
-	#pack [wlabel .m.i.lsep -text " | " -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side left
 	pack [wlabel .m.i.lmode -text "[::msgcat::mc mode]: " -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side left
 	pack [wlabel .m.i.lmodel -text "{" -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side left
 	pack [wlabel .m.i.lmodev -textvar ::cur(main,mode) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side left

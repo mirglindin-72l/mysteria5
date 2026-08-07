@@ -28,7 +28,7 @@ proc log_puts {lvl msg} {
 		puts "$tw" 
 
 		set ::loglist [linsert $::loglist 0 "$tw"]
-		set ::loglist [lrange $::loglist 0 128]
+		set ::loglist [lrange $::loglist 0 24]
 	}
 	return
 }
