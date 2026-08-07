@@ -1237,9 +1237,14 @@ proc show_reqmanager {mode id} {
 	if { $mode == "g" && [array names ::jgroups "$id"] != {} } {
 		ml_replay $::jgroups($id)
 		set users [dict get $::rule($id) users]
+		set mods [dict get $::rule($id) mods]
 		foreach user $users {
 			array unset ::group_to_sigreq "$id,$user"
 		}
+		foreach mod $mods {
+			array unset ::group_to_sigreq "$id,$mod"
+		}
+		array unset ::group_to_sigreq "$id,$::me(id)"
 		set contacts [array get ::group_to_sigreq "$id,*"]
 	} elseif { $mode == "p" } {
 		set users {}
@@ -1249,11 +1254,9 @@ proc show_reqmanager {mode id} {
 			if { $c == {} } {
 				continue
 			}
-			lappend users [dict get $c peerid]
+			set peerid [dict get $c peerid]
 		}
-		foreach user $users {
-			array unset ::group_to_sigreq "$id,$user"
-		}
+		array unset ::person_to_sigreq "$id,$peerid"
 		set contacts [array get ::person_to_sigreq "$::me(id),*"]
 	} else {
 		return
@@ -1294,9 +1297,9 @@ proc show_reqmanager {mode id} {
 		$w.p add [wframe "$w.b_$i"]
 		pack [wlabel "$w.b_$i.l" -text "$nickname <$peerid>" -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side left
 		if { $mode == "p" } {
-			pack [wbutton "$w.b_$i.b" -text [::msgcat::mc "add_b"] -command "chat_add $contact ; array unset $reqk ; after_add $mode $id ; destroy $w.b_$i ; destroy $w"  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font)] -fill both -side right
+			pack [wbutton "$w.b_$i.b" -text [::msgcat::mc "add_b"] -command "chat_add $contact ; array unset ::group_to_sigreq $reqk ; after_add $mode $id ; destroy $w.b_$i ; destroy $w"  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font)] -fill both -side right
 		} elseif { $mode == "g" } {
-			pack [wbutton "$w.b_$i.b" -text [::msgcat::mc "add_g"] -command "rule_add_user $id $peerid ; array unset $reqk ; after_add $mode $id ; destroy $w.b_$i ; destroy $w"  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font)] -fill both -side right
+			pack [wbutton "$w.b_$i.b" -text [::msgcat::mc "add_g"] -command "rule_add_user $id $peerid ; array unset ::person_to_sigreq $reqk ; after_add $mode $id ; destroy $w.b_$i ; destroy $w"  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font)] -fill both -side right
 		}
 		incr i 1
 	}
