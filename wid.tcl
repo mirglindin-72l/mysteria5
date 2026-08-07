@@ -150,16 +150,28 @@ proc wframe args {
 }
 
 proc ttk_style {} {
-	if { $::tcl_platform(os) != {Darwin} } {
-	source "./contrib/keramik/keramik.tcl"
-	ttk::style theme use keramik 
-	} elseif { [wm attributes . -isdark] } {
-	source "./contrib/keramik_dark/keramik_dark.tcl"
-	ttk::style theme use keramik_dark 
-	} else {
-	source "./contrib/keramik/keramik.tcl"
-	ttk::style theme use keramik 
+	set dark {}
+	switch $::tcl_platform(os) {
+		"Darwin" {
+			set dark [wm attributes . -isdark]	
+		}
+		"Windows NT" {
+			package require registry
+			set q {}
+			catch {
+			set q [registry get "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize\AppsUseLightTheme"]
+			}
+			if { $q == 0 } { set dark 1 }
+		}
 	}
+	if { $dark == 1 } {
+		source "./contrib/keramik_dark/keramik_dark.tcl"
+		ttk::style theme use keramik_dark 
+	} else {
+		source "./contrib/keramik/keramik.tcl"
+		ttk::style theme use keramik 
+	}
+	return
 }
 
 ttk_style

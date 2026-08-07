@@ -1941,7 +1941,6 @@ proc gr_savefile {task} {
 # if we scroll not the image, but the widgets on top of it
 #
 
-
 ### Alternative version
 #
 # I don't need this graphical thing. I also don't need these node dependencies. OK, suppose I even
@@ -1968,7 +1967,6 @@ proc gr_savefile {task} {
 # perhaps some sort of index for ht pages with replay
 # is also possible, to have readable links inside the
 # group
-
 
 proc saveobj {gid name obj} {
 	set path [file join $::filepath "obj" "${gid}_${name}.dat"]
