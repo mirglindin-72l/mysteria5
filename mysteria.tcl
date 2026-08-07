@@ -4637,9 +4637,6 @@ proc read_headers {waitids} {
 	}
 	}
 	set ::msglist(main,l) {}
-	#set ::msglist(date) {}
-	#set ::msglist(subj) {}
-	#set ::msglist(hash) {}
 	set ::msglist(main,t) {}
 	set ::msglist(main,k) {}
 	log_puts "ALL" "filling msglist"
@@ -4667,13 +4664,7 @@ proc read_headers {waitids} {
 		}
 		lappend ::msglist(main,k) $msg
 		lappend ::msglist(main,l) $hdr
-		#lappend ::msglist(main,l) "[lindex $hdr 0] | [string range [lindex $hdr 2] 0 3] | [lindex $hdr 1]"
-		#lappend ::msglist(date) [lindex $hdr 0]
-		#lappend ::msglist(subj) [lindex $hdr 1]
-		#lappend ::msglist(hash) [lindex $hdr 2]
 	}
-	#puts $::msglist
-	#puts $::msglist(main,k)
 }
 
 proc disp_contact {contact} {
