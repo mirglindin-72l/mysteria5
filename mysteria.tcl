@@ -1682,7 +1682,7 @@ proc rule_send {gid} {
 	dict set h nickname $::me(nickname)
 	dict set h kfrom $kfrom
 	dict set h kto $kto 
-	dict set h gsig {} 
+	dict set h gsig [crypto_sig [wrap $h] $::me(key)] 
 	set header [dict_to_header $h] 
 
 	log_puts "ALL" "Formed control message header:"
@@ -1760,8 +1760,9 @@ proc gmail_send {gid} {
 	dict set h nickname $::me(nickname)
 	dict set h kfrom $kfrom
 	dict set h kto $kto 
-	dict set h gsig {} 
+	dict set h gsig [crypto_sig [wrap $h] $::me(key)] 
 	set header [dict_to_header $h] 
+
 	log_puts "ALL" "Formed header:"
 	log_puts "ALL" $header
 
@@ -3985,8 +3986,9 @@ proc form_message {} {
 	dict set h nickname $::me(nickname)
 	dict set h kfrom $kfrom
 	dict set h kto $kto 
-	dict set h gsig {} 
+	dict set h gsig [crypto_sig [wrap $h] $::me(key)]
 	set header [dict_to_header $h] 
+
 	log_puts "ALL" "Formed header:"
 	log_puts "ALL" $header
 
@@ -5128,13 +5130,11 @@ proc enc_key {key hash} {
 	log_puts "ALL" "enc_key encrypted key [binary encode hex $res]"
 	set sig {}
 	catch { set sig [crypto_sig $symkey_e $::me(key)] } res
-	set mpubkey {}
-	catch { set mpubkey [crypto_exp_pub $::me(key)] } res
-	if { $symkey_e == {} || $sig == {} || $mpubkey == {} } {
+	if { $symkey_e == {} || $sig == {} } {
 		log_puts "ERR" "enc_key bad result, return"
 		return
 	}
-	set ret [list 1 $hash [wrap $symkey_e] [wrap $sig] [wrap $pubkey]]
+	set ret [list 1 $hash [wrap $symkey_e] [wrap $sig] $::me(id)]
 	return $ret
 }
 
@@ -5174,7 +5174,11 @@ proc dec_key {s} {
 	set hash [lindex $s 1]
 	set symkey_e [unwrap [lindex $s 2]]
 	set sig [unwrap [lindex $s 3]]
-	set pubkey [unwrap [lindex $s 4]]
+	set from [lindex $s 4]
+	set contact [latest_contact $from]
+	set c [contact_to_dict $contact]
+	set pubkey [dict get $c pubkey]
+	### end
 	set ver [crypto_ver $sig $symkey_e [crypto_parse_pub $pubkey]]
 	if { $ver == "false" } {
 		log_puts "ERR" "dec_key sigerr"
@@ -7966,6 +7970,19 @@ proc ml_showmsg {w hdr} {
 
 	set hash [dict get $h hash]
 	set type [dict get $h type]
+	set from [dict get $h from]
+	set sig [dict get $h gsig]
+	set contact {}
+	set c {}
+	set pubkey {}
+	set ver {}
+	if { $sig != {} } {
+		dict set h gsig {}
+		catch { set contact [latest_contact $from] }
+		catch { set c [contact_to_dict $contact] }
+		catch { set pubkey [crypto_parse_pub [dict get $c pubkey]] }
+		catch { set ver [crypto_ver $sig [wrap $h] $pubkey] }
+	}
 
 	set body {}
 	set ebody {}
@@ -8041,6 +8058,7 @@ proc ml_showmsg {w hdr} {
 	$w tag configure blue -foreground {#6060c0}
 	$w tag configure yellow -foreground {#c09060}
 	$w tag configure magenta -foreground {#c060c0}
+	$w tag configure green -foreground {#60c060}
 	$w tag configure hide -elide true
 	$w tag configure headerlink -foreground {#6060c0} -underline true
 	$w tag configure grouplink -foreground {#6060c0} -underline true
@@ -8055,6 +8073,13 @@ proc ml_showmsg {w hdr} {
 	$w tag configure doclink -foreground {#c09060} -underline true
 	#$w insert end "Comment: $comment\n" {red}
 	#$w insert end "   Sent: [clock format [dict get $h epoch] -format {%Y-%m-%d %H:%M:%S}]\n" {red}
+	if { $ver == "true" } {
+		$w insert end "Signed\n" {green}
+	} elseif { $ver == "false" } {
+		$w insert end "Signed, check failed\n" {red}
+	} else {
+		$w insert end "Not signed\n" {yellow}
+	}
 	$w insert end "[::msgcat::mc m_comment]: $comment ; [clock format [dict get $h epoch] -format {%Y-%m-%d %H:%M:%S}][elapsed_s {,} [dict get $h epoch] {ago}]\n" {red}
 	$w insert end "[::msgcat::mc m_from]: $from\n" {cyan m_from}
 	#$w insert end "[::msgcat::mc m_to]: $to\n" {cyan}

@@ -74,13 +74,14 @@ proc crypto_sig {data privkey} {
 
 proc crypto_ver {s data pubkey} {
 	set l [split [unwrap $pubkey] " "]
-	#log_puts "ALL" "crypto_ver key list $l"
+	log_puts "ALL" "crypto_ver"
 	set k [unwrap [lindex $l 1]]
-	if { $k == {} } {
+	if { $k == {} || $s == {} || $data == {} } {
 		return "false"
 	}
 	#return [::pki::verify $s $data $pubkey]
 	set ret [::sodium::ver $k $data $s]
+	log_puts "ALL" "crypto_ver ret $ret"
 	if { $ret != 0 } {
 		return "false"
 	} else {
