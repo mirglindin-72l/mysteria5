@@ -183,7 +183,7 @@ proc apply_delta {f p} {
 		switch $mode {
 		"d" {
 			set num [dict get $cmd d]
-			set tfs [expr "[dict get $cmd f]-$num+1"]
+			set tfs [expr "[dict get $cmd f]"]
 		}
 		"a" {
 			set num [dict get $cmd a]
@@ -266,6 +266,9 @@ set t3 "cool0\nnotcool\ncool1\ncool2\ncool3\ncool4\ncool5\n"
 set s "qwerty\nasdfg\nzxcvb"
 set t "12345\nasdfg\nzxcvb\nqaz"
 
+set aa "a\nb\nc\n\d\ne\nf\n"
+set bb "a\nf\n"
+
 set d01 [delta $t0 $t1]
 set d23 [delta $t2 $t3]
 set d1 [delta "" $t1]
@@ -275,8 +278,10 @@ set t3n [apply_delta $t2 $d23]
 set t1n [apply_delta "" $d1]
 set t3n [apply_delta "" $d3]
 set d [delta $s $t]
+set cc [delta $aa $bb]
 set tt [apply_delta $s $d]
-if { $t1n == $t1 && $t3n == $t3 && $t == $tt } {
+set ee [apply_delta $aa $cc]
+if { $t1n == $t1 && $t3n == $t3 && $t == $tt && $ee == $bb } {
 	log_puts "ALL" "test successful"
 } else {
 	log_puts "ALL" "test failed"
@@ -290,6 +295,10 @@ if { $t1n == $t1 && $t3n == $t3 && $t == $tt } {
 	log_puts "ALL" "d:\n$d"
 	log_puts "ALL" "t:\n$t"
 	log_puts "ALL" "tt:\n$tt"
+	log_puts "ALL" "aa:\n$aa"
+	log_puts "ALL" "bb:\n$bb"
+	log_puts "ALL" "cc:\n$cc"
+	log_puts "ALL" "ee:\n$ee"
 }
 }
 

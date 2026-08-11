@@ -63,6 +63,8 @@ proc i2p_start {} {
 	log_puts "ALL" "i2p_start start"
 	if { $::cur(net,on) != 1 } {
 		log_puts "ERR" "i2p_start networking not enabled, return"
+		catch { i2p_end }
+		catch { i2p_mend }
 		return
 	}
 	catch {
@@ -91,7 +93,11 @@ proc i2p_start {} {
 
 proc i2p_check {} {
 	log_puts "ALL" "i2p_check start"
-	if { $::cur(i2p,state) == "hello" } {
+	if { $::cur(i2p,state) == "" } {
+		log_puts "ERR" "i2p_check state empty, kill i2p"
+		i2p_end
+		i2p_mend
+	} elseif { $::cur(i2p,state) == "hello" } {
 		log_puts "ERR" "i2p_check kill i2p"
 		i2p_end
 		i2p_mend
@@ -141,7 +147,10 @@ proc i2p_mcheck {} {
 
 proc i2p_start_data {dest} {
 	log_puts "ALL" "i2p_start_data start"
-	if { $::cur(i2p,state) != "ready" && $dest == {} } {
+	if { $::cur(i2p,state) == "" } {
+		log_puts "ALL" "i2p_start_data not running, do not open connect socket"
+		return
+	} elseif { $::cur(i2p,state) != "ready" && $dest == {} } {
 		log_puts "ALL" "i2p_start_data not ready, schedule expect socket to future"
 		after 5000 [list i2p_start_data {}]
 		return	
@@ -179,7 +188,11 @@ proc i2p_check_data {c} {
 	catch {
 	set state ::cur(i2p,datasock,$c,state)
 	}
-	if { $state == "hello" } {
+	if { $state == "" } {
+		log_puts "ERR" "i2p_check_data empty state socket $c"
+		array unset ::cur "i2p,datasock,$c,*"
+		catch { close $c }
+	} elseif { $state == "hello" } {
 		log_puts "ERR" "i2p_check_data kill socket $c"
 		array unset ::cur "i2p,datasock,$c,*"
 		catch { close $c }
@@ -613,7 +626,7 @@ proc i2p_send {dst tmp msg} {
 
 proc i2p_checkqueue {} {
 	set last $::cur(i2p,lastcheck)
-	if { [clock microseconds] - $last < 2500 } {
+	if { [expr "[clock microseconds]-$last"] < 2500 } {
 		return
 	}
 	set ::cur(i2p,lastcheck) [clock microseconds]
@@ -635,7 +648,7 @@ proc i2p_checkqueue {} {
 		log_puts "ALL" "i2p_checkqueue SOCK $k DST $dst" 
 		set c [lindex [split $k {,}] 2]
 		if { [eof $c] } {
-			log_puts "ALL" "i2p_checkqueue SOCK $k s $c blocked" 
+			log_puts "ALL" "i2p_checkqueue SOCK $k s $c eof" 
 			array unset ::cur "i2p,datasock,$c,*"
 			catch { close $c }
 			continue
@@ -661,7 +674,7 @@ proc i2p_checkqueue {} {
 	}
 	foreach dst $dsts {
 		log_puts "ALL" "i2p_checkqueue NEW DST $dst" 
-		after idle [i2p_start_data $dst]
+		after idle [list i2p_start_data $dst]
 	}
 	return
 }
