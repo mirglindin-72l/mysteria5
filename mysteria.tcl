@@ -19,16 +19,16 @@ package require tcl::chan::random
 package require msgcat
 
 source "./fifo_fix.tcl"
-#source "./myrb.tcl"
+#source "./wip/myrb.tcl"
 source "./log.tcl"
 source "./wrappers.tcl"
 source "./bin.tcl"
-#source "./tree.tcl"
+#source "./wip/tree.tcl"
 source "./gfiles.tcl"
 source "./audio.tcl"
 source "./gr.tcl"
 source "./wid.tcl"
-#source "./rel.tcl"
+#source "./wip/rel.tcl"
 source "./i2p.tcl"
 source "./crypto.tcl"
 source "./offline.tcl"
@@ -38,6 +38,7 @@ source "./doc.tcl"
 source "./delta.tcl"
 source "./msg.tcl"
 source "./options.tcl"
+#source "./event.tcl"
 
 # globals
 
@@ -1862,6 +1863,8 @@ proc gmail_msg_read {gid} {
 
 	set ::recent(main) [lsort -unique [lrange $::recent(main) end-100 end]]
 	lappend ::recent(main) $hdr
+
+	#event_send gmail_msg_read body [wrap $body]
 }
 
 proc gmail_history_read {gid} {
@@ -1893,6 +1896,8 @@ proc gmail_history_read {gid} {
 		lappend ::msglist($gid,l) $title
 		lappend ::msglist($gid,k) $hdr
 	}
+
+	#event_send gmail_history_read msglist [wrap [array get ::msglist $gid,l]]
 }
 
 proc show_gchatwindow {p id} {
@@ -2123,6 +2128,7 @@ proc insert_image {w pos name data} {
 	$w image create $pos -image $simg -padx 4 -pady 4
 	#$w insert $pos "$imgdesc\n" {magenta}
 
+	#event_send insert_image w $w data [wrap $data] 
 	return
 }
 
@@ -3054,6 +3060,7 @@ proc show_mail {} {
 	
 	bind .m.x.ls <Key-Return> $read_cmd
 	bind .m.x.ls <Double-1> $read_cmd
+	#event_send show_mail
 }
 
 proc mail_header_to_contact {header} {
@@ -3111,6 +3118,7 @@ proc show_group_selection {} {
 		lappend ::jgrouplist(main,m) $bm 
 	}	
 	bind .sgs.f.l <Key-Return> $choose_cmd
+	#event_send show_group_selection jgrouplist [wrap [array get ::jgrouplist main,m]]
 }
 
 proc show_contact_selection {} {
@@ -3158,6 +3166,7 @@ proc show_contact_selection {} {
 		lappend ::buddylist(main,m) $bm 
 	}	
 	bind .sbs.f.l <Key-Return> $choose_cmd
+	#event_send show_contact_selection buddylist [wrap [array get ::buddylist main,m]]
 }
 
 proc show_editor {contact} {
@@ -3316,6 +3325,7 @@ proc show_editor {contact} {
 		}
 		.e.x.t yview end
 	}
+	#event_send show_editor
 }
 
 proc load_id {} {
@@ -5781,6 +5791,7 @@ proc gchat_append {p id data color} {
 		".g_$id.o.t" yview moveto 1
 	} 
 
+	#event_send gchat_append p $p id $id data [wrap $data] color $color
 	return
 }
 
@@ -5825,6 +5836,8 @@ proc gchat_append_res {p gid data res} {
 	} else {
 		log_puts "ERR" "gchat_append_res strange message otype $otype res $res"
 	}
+	#event_send gchat_append_res p $p id $id data [wrap $data] res $res
+	return
 }
 
 proc gchat_append_refuse {p gid} {
@@ -5832,6 +5845,8 @@ proc gchat_append_refuse {p gid} {
 		".g_$gid.o.t" insert end [::msgcat::mc "g_notallowed" [clock format [clock seconds] -format {%H:%M:%S}]] {refuse}
 		".g_$gid.o.t" yview moveto 1
 	}
+	#event_send gchat_append_refuse p $p gid $gid
+	return
 } 
 
 
@@ -8081,6 +8096,8 @@ proc ml_showmsg {w hdr} {
 	log_puts "ALL" "ml_showmsg $hash displayed headers"
 
 	disp_text $w $bodylines
+
+	#event_send ml_showmsg hdr $hdr body [wrap $body] ver $ver
 }
 
 proc disp_text {w bodylines} {
@@ -8742,6 +8759,7 @@ proc ml_replay {group} {
 	set ::rule($gid) $rule
 	ml_add_srcs $gid $gpeerid
 	log_puts "ERR" "ml_replay end"
+	#event_send rule gid $gid rule [wrap [array get ::rule]]
 }
 
 proc ml_showlist {mode obj} {
@@ -8800,6 +8818,7 @@ proc ml_showlist {mode obj} {
 	}
 
 	#ml_showhier $::msglist(main,k)
+	#event_send ml_showlist mode $mode obj $obj msglist [wrap [array get ::msglist main,l]]
 }
 
 proc ml_groupdict {group} {
@@ -9179,6 +9198,7 @@ proc ml_add_eml {p hash eml} {
 	#flush $f
 	#close $f
 	### end
+	#event_send ml_add_eml p $p hash $hash 
 }
 
 proc dl_reqdict {req} {
@@ -9318,6 +9338,7 @@ proc dl_add {req buddyhash otherpeers action} {
 	array set ::dlstate_by_hash [list $hash,top 0]
 	array set ::dlstate_by_hash [list $hash,last [clock seconds]]
 	array set ::dlaction_by_hash [list $hash $action]
+	#event_send dladd hash $hash 
 	return $hash
 }
 
@@ -9353,6 +9374,7 @@ proc dl_start {hash} {
 	dl_getpeers $hash 0
 	dl_check $hash
 	after 50 [list dl_run $hash]
+	#event_send dlstart hash $hash 
 	return
 }
 
@@ -9444,6 +9466,7 @@ proc dl_stop {hash} {
 	}
 	log_puts "ALL" "dl_stop"
 	array set ::dlstate_by_hash [list $hash,state "STOP"]
+	#event_send dlstop hash $hash 
 }
 
 proc dl_finish {hash} {
@@ -9495,9 +9518,11 @@ proc dl_finish {hash} {
 		log_puts "ALL" "dl_finish dlaction $dlaction"
 		#catch { {*}$dlaction $data }
 		{*}$dlaction $data
+		#event_send dlaction action [wrap $dlaction] data [wrap $data]
 	}
 
 	after 18000 [list dl_del $hash]
+	#event_send dlfinish hash $hash 
 	return
 }
 
@@ -9521,6 +9546,7 @@ proc dl_del {hash} {
 	array unset ::dl_by_hash $hash
 	array unset ::dlstate_by_hash $hash,*
 	array unset ::dlaction_by_hash $hash*
+	#event_send dldel hash $hash 
 }
 
 proc saveobj {gid name obj} {
