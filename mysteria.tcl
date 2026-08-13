@@ -2974,7 +2974,7 @@ proc show_mail {} {
 		-selectforeground {#6090c0} -selectbackground $::options(hilightcolor) \
 		-padx 5 -pady 3 -height 20 -width 60 -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(listfont)] \
 		-fill both -expand 1 -side right
-	.m.p add [panedwindow .m.t -ori ver] -minsize 24 -stretch always -hide false 
+	.m.p add [panedwindow .m.t -ori ver] -minsize 24 -stretch always -hide true
 	foreach {key val} [array get ::transports "*,enable"] {
 		set name [lindex [split $key {,}] 0]
 		set copy $::transports($name,copy)
@@ -2988,7 +2988,7 @@ proc show_mail {} {
 		#pack [wbutton .m.t_${name}.eep -text [::msgcat::mc "add copied peer"] -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) -command $paste] -side right
 		#pack [wbutton .m.t_${name}.eec -text [::msgcat::mc "copy my dest"] -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) -command $copy] -side right
 	}
-	.m.p add [wframe .m.s] -minsize 24 -stretch never
+	.m.p add [wframe .m.s] -minsize 24 -stretch never -hide true
 	pack [wbutton .m.s.cbm -text [::msgcat::mc "^ me"] -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) -command {copy_my_contact} ] -side right
 	pack [wlabel .m.s.sep0 -text " " -width 1 -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -side right
 	pack [wbutton .m.s.cba -text [::msgcat::mc "+ (p)"] -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) -command {add_copied_contact} ] -side right
@@ -7967,6 +7967,9 @@ proc ml_showmsg {w hdr} {
 	set hash [dict get $h hash]
 	set type [dict get $h type]
 	set from [dict get $h from]
+	set subject [dict get $h subject]
+	set to [dict get $h to]
+	set epoch [dict get $h epoch]
 	set sig [dict get $h gsig]
 	set contact {}
 	set c {}
@@ -8044,10 +8047,22 @@ proc ml_showmsg {w hdr} {
 
 	set body [encoding convertfrom utf-8 $body]	
 	set lines [split $body "\n"]
-	set from [lrange [lindex $lines 0] 1 end]
-	set to [lrange [lindex $lines 1] 1 end]
-	set subject [lrange [lindex $lines 2] 1 end]
-	set epoch [lrange [lindex $lines 3] 1 end]
+	set bfrom [lrange [lindex $lines 0] 1 end]
+	set bto [lrange [lindex $lines 1] 1 end]
+	set bsubject [lrange [lindex $lines 2] 1 end]
+	set bepoch [lrange [lindex $lines 3] 1 end]
+	if { [string trim $bepoch] == [string trim $epoch] } {
+		set epoch $bepoch
+		set bepoch {}
+	}
+	if { [lindex [split $bfrom {<>}] 1] == [string trim $from] } {
+		set from $bfrom
+		set bfrom {}
+	}
+	if { [lindex [split $bto {<>}] 1] == [string trim $to] } {
+		set to $bto
+		set bto {}
+	}
 	set bodylines [lrange $lines 5 end]
 	$w tag configure red -foreground {#c06060} 
 	$w tag configure cyan -foreground {#6090c0}
@@ -8067,18 +8082,24 @@ proc ml_showmsg {w hdr} {
 	$w tag configure inline_voice -foreground {#c060c0} -underline true
 	$w tag configure voicelink -foreground {#c060c0} -underline true
 	$w tag configure doclink -foreground {#c09060} -underline true
-	#$w insert end "Comment: $comment\n" {red}
-	#$w insert end "   Sent: [clock format [dict get $h epoch] -format {%Y-%m-%d %H:%M:%S}]\n" {red}
+	#$w insert end "[::msgcat::mc m_comment] -> $comment ; [clock format $epoch -format {%Y-%m-%d %H:%M:%S}][elapsed_s {,} [dict get $h epoch] {ago}]\n" {red}
 	if { $ver == "true" } {
-		$w insert end "Signed\n" {green}
+		$w insert end "[::msgcat::mc {Signed by}] -> $from\n" {green}
 	} elseif { $ver == "false" } {
-		$w insert end "Signed, check failed\n" {red}
+		$w insert end "[::msgcat::mc {Signed, check failed}]\n" {red}
 	} else {
-		$w insert end "Not signed\n" {yellow}
+		$w insert end "[::msgcat::mc {Not signed}]\n" {yellow}
 	}
-	$w insert end "[::msgcat::mc m_comment]: $comment ; [clock format [dict get $h epoch] -format {%Y-%m-%d %H:%M:%S}][elapsed_s {,} [dict get $h epoch] {ago}]\n" {red}
-	$w insert end "[::msgcat::mc m_from]: $from\n" {cyan m_from}
-	#$w insert end "[::msgcat::mc m_to]: $to\n" {cyan}
+	$w insert end "[::msgcat::mc m_comment]: $comment\n" {yellow}
+	$w insert end "[::msgcat::mc m_from]: $from " {cyan m_from}
+	$w insert end "$bfrom" {red m_from}
+	$w insert end "\n" {m_from}
+	$w insert end "[::msgcat::mc m_to]: $to " {cyan}
+	$w insert end "$bto" {red}
+	$w insert end "\n" {}
+	$w insert end "[::msgcat::mc m_sent]: [clock format $epoch -format {%Y-%m-%d %H:%M:%S}] " {cyan}
+	$w insert end "$bepoch" {red}
+	$w insert end "\n" {}
 	$w insert end "[::msgcat::mc m_subject]: $subject\n" {cyan}
 	$w insert end "\n"
 

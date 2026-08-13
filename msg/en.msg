@@ -104,7 +104,7 @@
 ::msgcat::mcflset "doc_recent_t" "Choose recent document"
 ::msgcat::mcflset "igroup_t" "Choose group to insert"
 ::msgcat::mcflset "m_sent"    "Sent "
-::msgcat::mcflset "m_comment" "Mark "
+::msgcat::mcflset "m_comment" "Type "
 ::msgcat::mcflset "m_from"    "From "
 ::msgcat::mcflset "m_to"      "To   "
 ::msgcat::mcflset "m_subject" "Subj "
@@ -135,4 +135,7 @@
 ::msgcat::mcflset "Sources of group: " "Sources of group: "
 ::msgcat::mcflset "doc" "doc"
 ::msgcat::mcflset "clear" "clear"
+::msgcat::mcflset "Signed by" "Signed by"
+::msgcat::mcflset "Signed, check failed" "Signed, check failed"
+::msgcat::mcflset "Not signed" "Not signed"
 

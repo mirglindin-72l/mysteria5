@@ -104,7 +104,7 @@
 ::msgcat::mcflset "doc_recent_t" "Выбрать недавний документ"
 ::msgcat::mcflset "igroup_t" "Выбрать группу для вставки"
 ::msgcat::mcflset "m_sent"    "Исток "
-::msgcat::mcflset "m_comment" "Метка "
+::msgcat::mcflset "m_comment" "Тип   "
 ::msgcat::mcflset "m_from"    "Автор "
 ::msgcat::mcflset "m_to"      "Цель  "
 ::msgcat::mcflset "m_subject" "Тема  "
@@ -135,4 +135,7 @@
 ::msgcat::mcflset "Sources of group: " "Источники группы: "
 ::msgcat::mcflset "doc" "док"
 ::msgcat::mcflset "clear" "сброс"
+::msgcat::mcflset "Signed by" "Подписано"
+::msgcat::mcflset "Signed, check failed" "Подписано, недействительно"
+::msgcat::mcflset "Not signed" "Не подписано"
 
