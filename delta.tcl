@@ -60,7 +60,7 @@ proc delta {f t} {
 	#	incr te -1
 	#}
 
-	### try to reproduce diff algorithm
+	#### try to reproduce diff algorithm
 	### we already have two vectors
 	### 
 	### I'd rather just take a differing point in vector,
@@ -222,6 +222,8 @@ proc apply_delta {f p} {
 	log_puts "ALL" "apply_delta $ret"
 	return $ret
 }
+
+### should remove what's below when I make real tests
 
 proc test_delta {} {
 source "./log.tcl"

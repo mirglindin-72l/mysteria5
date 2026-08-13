@@ -7297,13 +7297,13 @@ proc str_start {s} {
 }
 
 proc req_ping {f s} {
-	log_puts "ALL" "req_ping $f $s"
+	log_puts "ALL" "req_ping f=$f s=$s"
 	send [lindex [split $f { }] 0] [lindex [split $f { }] 1] [list "RES" $s "OK" $::me(pubkey)]
 	return
 }
 
 proc req_store {f s r a} {
-	#log_puts "ALL" "store value r=$r a=$a"
+	log_puts "ALL" "req_store f=$f s=$s r=$r a=$a"
 	array set ::valuestore [list "$r" $a]
 	array set ::valuestore [list $r,[expr "[clock microseconds]%64"] $a]
 	send [lindex [split $f { }] 0] [lindex [split $f { }] 1] [list "RES" $s "OK"]
@@ -7312,6 +7312,7 @@ proc req_store {f s r a} {
 }
 
 proc req_find_node {f s r} {
+	log_puts "ALL" "req_find_node f=$f s=$s r=$r a=$a"
 	set res {}
 	foreach {key value} [array get ::peerstore "$r*"] {
 		if { $value == "" } {
@@ -7339,6 +7340,7 @@ proc req_find_node {f s r} {
 }
 
 proc req_find_value {f s r} {
+	log_puts "ALL" "req_find_value f=$f s=$s r=$r a=$a"
 	set stores [ list ::contacts ::groups ::headers ::sources]
 	set res {}
 	foreach store $stores {
@@ -7741,7 +7743,6 @@ proc str_req {f p tcp} {
 		log_puts "ERR" "str_start networking not enabled"
 		return
 	}
-	#log_puts "ALL" "STR_REQ $p"
 	set m [lindex $p 0]
 	set s [lindex $p 1]
 	set r [lindex $p 2]
@@ -8106,7 +8107,6 @@ proc ml_showmsg {w hdr} {
 	log_puts "ALL" "ml_showmsg $hash displayed headers"
 
 	disp_text $w $bodylines
-
 }
 
 proc disp_text {w bodylines} {
