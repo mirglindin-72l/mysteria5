@@ -2065,11 +2065,15 @@ proc dl_get_indexed {req} {
 		log_puts "ALL" "dl_get_indexed name $name"
 		if { ![file exists $name] || ![file isfile $name] } {
 			log_puts "ERR" "dl_get_indexed no such file $name"
+			array unset ::file_by_hash $hash
+			array unset ::hash_by_file [wrap $name] 
 			return
 		}
 		set f [open $name r]
 		if { $f == {} } {
 			log_puts "ERR" "dl_get_indexed failed to open $name"
+			array unset ::file_by_hash $hash
+			array unset ::hash_by_file [wrap $name] 
 			return
 		}
 		fconfigure $f -buffering full -translation binary
@@ -2079,6 +2083,8 @@ proc dl_get_indexed {req} {
 			log_puts "ALL" "dl_get_indexed return data"
 			return $data
 		}
+	} else {
+		array unset ::file_by_hash $hash
 	}
 	log_puts "ALL" "dl_get_indexed end"
 	return
