@@ -741,7 +741,7 @@ proc i2p_recv {c dst msg} {
 			continue
 		}
 		log_puts "ALL" "i2p_recv R OUT $r TO $dst"
-		i2p_send $dst 0 $r
+		after idle [list i2p_send $dst 0 $r]
 		log_puts "ALL" "i2p_recv R PUT"
 	}
 	log_puts "ALL" "i2p_recv R DONE"

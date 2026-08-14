@@ -107,8 +107,9 @@ set ::last(peer) 0
 set ::tick [clock seconds] 
 set ::filepath {}
 array set ::msglist {}
+#set ::options(default_chunksize) 16777216
 #set ::options(default_chunksize) 65536
-set ::options(default_chunksize) 16777216
+set ::options(default_chunksize) [expr {1024*256}] 
 set ::me(key) {}
 set ::me(id) {}
 set ::me(pubkey) {}
@@ -1840,6 +1841,9 @@ proc gmail_msg_read {gid} {
 	set subject [lrange [lindex $lines 2] 1 end]
 	set epoch [lindex $lines 3]
 	set bodylines [lrange $lines 5 end]
+	$w tag configure hhh -font {"Serif" 12}
+	$w tag configure hh -font {"Serif" 13}
+	$w tag configure h -font {"Serif" 14}
 	$w tag configure red -foreground {#c06060} 
 	$w tag configure cyan -foreground {#6090c0}
 	$w tag configure blue -foreground {#6060c0}
@@ -2022,16 +2026,19 @@ proc show_gchatwindow {p id} {
 	set cmd_li "+ click_window limg .g_$id.o.t $id %x %y"
 	set cmd_g "+ click_window gr .g_$id.o.t $id %x %y"
 	set cmd_h "+ click_window h .g_$id.o.t $id %x %y"
+	".g_$id.o.t" tag configure hhh -font {"Serif" 12}
+	".g_$id.o.t" tag configure hh -font {"Serif" 13}
+	".g_$id.o.t" tag configure h -font {"Serif" 14}
 	".g_$id.o.t" tag configure hide -elide true
-	".g_$id.o.t" tag configure blue -foreground {#6060c0} -font {Sans 9}
-	".g_$id.o.t" tag configure red -foreground {#c06060} -font {Sans 9}
-	".g_$id.o.t" tag configure cyan -foreground {#60c0c0} -font {Sans 9}
-	".g_$id.o.t" tag configure green -foreground {#60c060} -font {Sans 9}
-	".g_$id.o.t" tag configure yellow -foreground {#c0c060} -font {Sans 9}
-	".g_$id.o.t" tag configure magenta -foreground {#c060c0} -font {Sans 9}
-	".g_$id.o.t" tag configure ok -foreground {#6060c0} -font {Sans 9}
-	".g_$id.o.t" tag configure no -foreground {#c06060} -font {Sans 9}
-	".g_$id.o.t" tag configure refuse -foreground {#c06060} -font {Sans 9}
+	".g_$id.o.t" tag configure blue -foreground {#6060c0} -font $::options(font) 
+	".g_$id.o.t" tag configure red -foreground {#c06060} -font $::options(font)
+	".g_$id.o.t" tag configure cyan -foreground {#60c0c0} -font $::options(font)
+	".g_$id.o.t" tag configure green -foreground {#60c060} -font $::options(font)
+	".g_$id.o.t" tag configure yellow -foreground {#c0c060} -font $::options(font)
+	".g_$id.o.t" tag configure magenta -foreground {#c060c0} -font $::options(font)
+	".g_$id.o.t" tag configure ok -foreground {#6060c0} -font $::options(font)
+	".g_$id.o.t" tag configure no -foreground {#c06060} -font $::options(font)
+	".g_$id.o.t" tag configure refuse -foreground {#c06060} -font $::options(font)
 	".g_$id.o.t" tag bind filelink <1> $cmd_f
 	".g_$id.o.t" tag bind inline_voice <1> $cmd_v
 	".g_$id.o.t" tag bind voicelink <1> $cmd_lv
@@ -2042,8 +2049,49 @@ proc show_gchatwindow {p id} {
 	bind ".g_$id.b.i" <Key-Return> "gchat_sendbutton $p $id"
 }
 
+proc dl_get_indexed {req} {
+	if { $req == {} } {
+		return
+	}
+	log_puts "ALL" "dl_get_indexed"
+	set r [dl_reqdict $req]
+	set hash [dict get $r filehash]
+	set name [dict get $r filename]
+	set found [array get ::file_by_hash $hash]
+	if { $found != {} } {
+		log_puts "ALL" "dl_get_indexed found $found"
+		set data {}
+		set name [unwrap [dict get [lindex $found end] name]]
+		log_puts "ALL" "dl_get_indexed name $name"
+		if { ![file exists $name] || ![file isfile $name] } {
+			log_puts "ERR" "dl_get_indexed no such file $name"
+			return
+		}
+		set f [open $name r]
+		if { $f == {} } {
+			log_puts "ERR" "dl_get_indexed failed to open $name"
+			return
+		}
+		fconfigure $f -buffering full -translation binary
+		set data [read $f]
+		close $f
+		if { $data != {} } {
+			log_puts "ALL" "dl_get_indexed return data"
+			return $data
+		}
+	}
+	log_puts "ALL" "dl_get_indexed end"
+	return
+}
+
 proc dl_add_voice {w req buddyhash} {
 	if { $w == {} || $req == {} } {
+		return
+	}
+
+	set idata [dl_get_indexed $req]
+	if { $idata != {} } {
+		after idle [list pay_voice_start $w $dur $idata]
 		return
 	}
 
@@ -2062,8 +2110,15 @@ proc dl_add_image {w req buddyhash} {
 		return
 	}
 
+	set idata [dl_get_indexed $req]
+	if { $idata != {} } {
+		after idle [list insert_image $w [$w index end] "Image" $idata]
+		return
+	}
+
 	set r [dl_reqdict $req]
 	set hash [dict get $r filehash]
+	log_puts "ALL" "dl_add_image hashed file not found"
 	dl_del $hash
 	dl_add $req $buddyhash {} [list insert_image $w [$w index end] "Image"]
 	after idle [list dl_start $hash]
@@ -3279,6 +3334,9 @@ proc show_editor {contact} {
 	#bind .e.ti.rec <ButtonRelease-1> "record_voice_end ; insert_inline_voice e {}"
 	bind .e.h.lrec <ButtonPress-1> "record_voice_start .e" 
 	bind .e.h.lrec <ButtonRelease-1> "record_voice_end ; insert_linked_voice e {}"
+	.e.x.t tag configure hhh -font {"Serif" 12}
+	.e.x.t tag configure hh -font {"Serif" 13}
+	.e.x.t tag configure h -font {"Serif" 14}
 	.e.x.t tag configure red -foreground {#c06060} 
 	.e.x.t tag configure cyan -foreground {#60c0c0}
 	.e.x.t tag configure blue -foreground {#6060c0}
@@ -4215,6 +4273,9 @@ proc read_message {header} {
 	log_puts "ALL" "$header"
 	log_puts "ALL" "Message read from filesystem is:"
 	log_puts "ALL" "$whole"
+	.m.f.t tag configure hhh -font {"Serif" 12}
+	.m.f.t tag configure hh -font {"Serif" 13}
+	.m.f.t tag configure h -font {"Serif" 14}
 	.m.f.t tag configure red -foreground {#c06060} 
 	.m.f.t tag configure cyan -foreground {#60c0c0}
 	.m.f.t tag configure blue -foreground {#6060c0}
@@ -7312,7 +7373,7 @@ proc req_store {f s r a} {
 }
 
 proc req_find_node {f s r} {
-	log_puts "ALL" "req_find_node f=$f s=$s r=$r a=$a"
+	log_puts "ALL" "req_find_node f=$f s=$s r=$r"
 	set res {}
 	foreach {key value} [array get ::peerstore "$r*"] {
 		if { $value == "" } {
@@ -7340,7 +7401,7 @@ proc req_find_node {f s r} {
 }
 
 proc req_find_value {f s r} {
-	log_puts "ALL" "req_find_value f=$f s=$s r=$r a=$a"
+	log_puts "ALL" "req_find_value f=$f s=$s r=$r"
 	set stores [ list ::contacts ::groups ::headers ::sources]
 	set res {}
 	foreach store $stores {
@@ -8065,6 +8126,9 @@ proc ml_showmsg {w hdr} {
 		set bto {}
 	}
 	set bodylines [lrange $lines 5 end]
+	$w tag configure hhh -font {"Serif" 12}
+	$w tag configure hh -font {"Serif" 13}
+	$w tag configure h -font {"Serif" 14}
 	$w tag configure red -foreground {#c06060} 
 	$w tag configure cyan -foreground {#6090c0}
 	$w tag configure blue -foreground {#6060c0}
@@ -8198,6 +8262,15 @@ proc disp_line {w line} {
 		}
 		">" {
 			set tag {magenta}
+		}
+		"###" {
+			set tag {hhh}
+		}
+		"##" {
+			set tag {hh}
+		}
+		"#" {
+			set tag {h}
 		}
 		default {
 			set tag {} 
@@ -9423,11 +9496,13 @@ proc dl_run {hash} {
 		dict set cr filename [lindex [file split [dict get $r filename]] end]
 		dict set cr offset $::dlstate_by_hash($hash,top)
 		# 32mb+ -> chunk 16mb
-		if { $size >= 33554432 } {
-			set chunksize 16777216 
-		} else {
-			set chunksize $::options(default_chunksize)
-		}
+		#if { $size >= 33554432 } {
+		#	set chunksize 16777216 
+		#} else {
+		#	set chunksize $::options(default_chunksize)
+		#}
+		### decided on one chunksize
+		set chunksize $::options(default_chunksize)
 		dict set cr len $chunksize
 		set req [dl_dictreq $cr]
 		# normal transfer between buddies
@@ -9513,6 +9588,7 @@ proc dl_finish {hash} {
 	if { [file exists $final_filename] != 1 } {
 		file rename $local_filename $final_filename
 	}
+	hash_file $final_filename
 	array set ::dlstate_by_hash [list $hash,state "DONE"]
 	
 	set dlaction {}
