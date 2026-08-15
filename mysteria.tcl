@@ -3194,20 +3194,29 @@ proc mail_header_to_contact {header} {
 	return $contact
 }
 
+proc show_group_selection_choose_cmd {num} {
+	if { $num == {} } {
+		return
+	}
+	set gid [lindex $::jgrouplist(main,k) [lindex [.sgs.f.l index active] 0]]
+	if { $gid != "" } {
+		set ::cur(main,mode) {g}
+		set ::cur(main,group,h) $::jgroups($gid)
+		set ::cur(main,group,l) [dict get [ml_groupdict $::cur(main,group,h)] name]
+		ml_showlist g [dict get [ml_groupdict $::cur(main,group,h)] gid]
+	}
+	destroy .sgs
+	return
+}
+
 proc show_group_selection {} {
 	if { [winfo exists .sgs] == 1} {
 		log_puts "ERR" "ERR window exists"
 		return
 	}
 	set choose_cmd {
-		set grp [lindex $::jgrouplist(main,k) [lindex [.sgs.f.l index active] 0]]
-		if { $grp != "" } {
-			set ::cur(main,mode) {g}
-			set ::cur(main,group,h) $::jgroups([lindex $::jgrouplist(main,k) [lindex [.sgs.f.l index active] 0]])
-			set ::cur(main,group,l) [dict get [ml_groupdict $::cur(main,group,h)] name]
-			ml_showlist g [dict get [ml_groupdict $::cur(main,group,h)] gid]
-		}
-		destroy .sgs
+		set num [lindex [.sgs.f.l index active] 0]
+		show_group_selection_choose_cmd $num
 	}
 	toplevel .sgs
 	wm title .sgs [::msgcat::mc "groupsel_t"]
@@ -3236,25 +3245,49 @@ proc show_group_selection {} {
 	bind .sgs.f.l <Key-Return> $choose_cmd
 }
 
+proc show_contact_selection_choose_cmd {num} {
+	if { $num == {} } {
+		return
+	}
+	set key [lindex $::buddylist(main,k) $num]
+	if { $key == {} } {
+		return
+	}
+	update_buddy $key
+	set ::cur(main,person,h) $::buddies($key)
+	set ::cur(main,person,l) [dict get [contact_to_dict $::cur(main,person,h)] nickname]
+	if { $::cur(main,person,h) != "" } {
+		set ::cur(main,mode) {p}
+		ml_showlist p [dict get [contact_to_dict $::cur(main,person,h)] peerid]
+	}
+	destroy .sbs
+	return
+}
+
+proc show_contact_selection_detail_cmd {num} {
+	if { $num == {} } {
+		return
+	}
+	set hash [lindex $::buddylist(main,k) $num]
+	if { $hash == {} } {
+		return
+	}
+	show_buddy_details $hash
+	return
+}
+
 proc show_contact_selection {} {
 	if { [winfo exists .scs] == 1} {
 		log_puts "ERR" "ERR window exists"
 		return
 	}
 	set choose_cmd {
-		set key [lindex $::buddylist(main,k) [lindex [.sbs.f.l index active] 0]]
-		update_buddy $key
-		set ::cur(main,person,h) $::buddies($key)
-		set ::cur(main,person,l) [dict get [contact_to_dict $::cur(main,person,h)] nickname]
-		if {$::cur(main,person,h) != ""} {
-			set ::cur(main,mode) {p}
-			ml_showlist p [dict get [contact_to_dict $::cur(main,person,h)] peerid]
-		}
-		destroy .sbs
+		set num [lindex [.sbs.f.l index active] 0]
+		show_contact_selection_choose_cmd $num
 	}
 	set detail_cmd {
-		set hash [lindex $::buddylist(main,k) [lindex [.sbs.f.l index active] 0]] ;
-		show_buddy_details $hash
+		set num [lindex [.sbs.f.l index active] 0]
+		show_contact_selection_detail_cmd $num
 	}
 	toplevel .sbs
 	wm title .sbs [::msgcat::mc "buddysel_t"] 
@@ -3290,12 +3323,12 @@ proc show_editor {contact} {
 	if { $::cur(main,mode) == "p" && [llength $::cur(main,person,h)] == 0 } {
 		show_contact_selection
 	}
-	if { $::cur(main,mode) == "m" && [llength $contact] == 0} {
+	if { $::cur(main,mode) == "m" && [llength $contact] == 0 } {
 		log_puts "ERR" "ERR no contact : got $contact"
 		show_contact_selection
 	}
 	
-	if { [winfo exists .e] == 1} {
+	if { [winfo exists .e] == 1 } {
 		log_puts "ERR" "ERR window exists"
 		return
 	}
@@ -3308,7 +3341,7 @@ proc show_editor {contact} {
 		set ::card(main) {}
 	}
 
-	set last [string last "Re:Re:" $::subject(main) ]
+	set last [string last "Re:Re:" $::subject(main)]
 	if { $last > 0 } {
 		set ::subject(main) [string range $::subject(main) $last end]
 	}
@@ -3367,35 +3400,32 @@ proc show_editor {contact} {
 		pack [wlabel .e.b3.s -text "$ps" -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) -width 60] -fill both -expand 1 -side left 
 	}
 	.e.p add [wframe .e.x] -stretch always
-	pack [wscrollbar .e.x.y -activebackground $::options(hilightcolor)  -troughcolor $::options(hilightcolor)  -command ".e.x.t yview"] -fill y -side right
-	pack [text .e.x.t -wrap word -yscrollc ".e.x.y set" \
-		-selectforeground {#6090c0} -selectbackground $::options(hilightcolor) \
-		-padx 5 -pady 3 -height 12 -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(listfont)] \
-		-fill both -expand 1 -side right
+	pack [wscrollbar .e.x.y -activebackground $::options(hilightcolor) -troughcolor $::options(hilightcolor) -command ".e.x.t yview"] -fill y -side right
+	pack [text .e.x.t -wrap word -yscrollc ".e.x.y set" -selectforeground {#6090c0} -selectbackground $::options(hilightcolor) -padx 5 -pady 3 -height 12 -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(listfont)] -fill both -expand 1 -side right
 	.e.p add [wframe .e.h] -minsize 24 -stretch never -hide true
-	pack [wbutton .e.h.i -text [::msgcat::mc "e_filepick"]  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command "insert_single_file e none"] -fill both -side left 
-	pack [wbutton .e.h.a -text [::msgcat::mc "e_fileindex"]  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command "show_fileoffer e none" ] -fill both -side left
-	pack [wbutton .e.h.limg -text [::msgcat::mc "image"]  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command "insert_linked_image e {}"] -fill both -side right 
-	pack [wbutton .e.h.lrec -text [::msgcat::mc "voice"]  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command "insert_linked_voice e {}"] -fill both -side right 
-	pack [wbutton .e.h.l -text [::msgcat::mc "e_letter"]  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command "show_recent e none none" ] -fill both -side left
-	pack [wbutton .e.h.grp -text [::msgcat::mc "e_group"]  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command "show_insertgroup e none" ] -fill both -side left
+	pack [wbutton .e.h.i -text [::msgcat::mc "e_filepick"] -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command "insert_single_file e none"] -fill both -side left 
+	pack [wbutton .e.h.a -text [::msgcat::mc "e_fileindex"] -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command "show_fileoffer e none" ] -fill both -side left
+	pack [wbutton .e.h.limg -text [::msgcat::mc "image"] -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command "insert_linked_image e {}"] -fill both -side right 
+	pack [wbutton .e.h.lrec -text [::msgcat::mc "voice"] -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command "insert_linked_voice e {}"] -fill both -side right 
+	pack [wbutton .e.h.l -text [::msgcat::mc "e_letter"] -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command "show_recent e none none" ] -fill both -side left
+	pack [wbutton .e.h.grp -text [::msgcat::mc "e_group"] -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command "show_insertgroup e none" ] -fill both -side left
 	.e.p add [wframe .e.ti] -hide true
-	pack [wbutton .e.ti.g -text [::msgcat::mc "e_gr"]  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command "show_gredit [clock microseconds] {} .e.x.t" ] -fill both -side right
-	pack [wbutton .e.ti.mysm -text [::msgcat::mc "mysm"]  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command "show_mysm [clock microseconds] {} .e.x.t" ] -fill both -side right
+	pack [wbutton .e.ti.g -text [::msgcat::mc "e_gr"] -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command "show_gredit [clock microseconds] {} .e.x.t" ] -fill both -side right
+	pack [wbutton .e.ti.mysm -text [::msgcat::mc "mysm"] -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command "show_mysm [clock microseconds] {} .e.x.t" ] -fill both -side right
 	#pack [wbutton .e.ti.at -text "inline file" -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command "attach_file .e.x.t"] -fill both -side right 
 	#pack [wbutton .e.ti.img -text "inline image"  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command "insert_inline_image e {}"] -fill both -side right 
 	#pack [wbutton .e.ti.rec -text "inline voice"  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command {}] -fill both -side right 
 	.e.p add [wframe .e.t] -minsize 24 -stretch never
 	if { $::cur(main,mode) == {p} } {
-		pack [wbutton .e.t.v -text [::msgcat::mc "commit"]  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command {ml_add_hdrs mlphdr [dict get [contact_to_dict $::cur(main,person,h)] peerid] [form_message] ; destroy .e } ] -fill both -side right
+		pack [wbutton .e.t.v -text [::msgcat::mc "commit"] -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command {ml_add_hdrs mlphdr [dict get [contact_to_dict $::cur(main,person,h)] peerid] [form_message] ; destroy .e } ] -fill both -side right
 	} elseif { $::cur(main,mode) == {g} } {
-		pack [wbutton .e.t.v -text [::msgcat::mc "commit"]  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command {ml_add_hdrs mlhdr [dict get [ml_groupdict $::cur(main,group,h)] gid] [form_message] ; destroy .e } ] -fill both -side right
+		pack [wbutton .e.t.v -text [::msgcat::mc "commit"] -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command {ml_add_hdrs mlhdr [dict get [ml_groupdict $::cur(main,group,h)] gid] [form_message] ; destroy .e } ] -fill both -side right
 	} elseif { $::cur(main,mode) == {m} || $::cur(main,mode) == {n} } {
 		pack [wbutton .e.t.v -text [::msgcat::mc "commit"] -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command {sc_out [form_message ] ; destroy .e } ] -fill both -side right
 	} else {
-		pack [wbutton .e.t.v -text [::msgcat::mc "commit"]  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command {form_message ; destroy .e } ] -fill both -side right
+		pack [wbutton .e.t.v -text [::msgcat::mc "commit"] -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command {form_message ; destroy .e } ] -fill both -side right
 	}
-	pack [wbutton .e.t.h -text [::msgcat::mc "+"]  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command $toggle_cmd ] -fill both -side right
+	pack [wbutton .e.t.h -text [::msgcat::mc "+"] -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command $toggle_cmd ] -fill both -side right
 	#bind .e.ti.rec <ButtonPress-1> "record_voice_start .e" 
 	#bind .e.ti.rec <ButtonRelease-1> "record_voice_end ; insert_inline_voice e {}"
 	bind .e.h.lrec <ButtonPress-1> "record_voice_start .e" 
@@ -6161,13 +6191,13 @@ proc check_peers {} {
 	}
 	log_puts "ALL" "check_peers and buckets"
 	#log_puts "ALL" "peerlast [expr {$::last(peer)+200}] > [clock microseconds]"
-	if { [expr {$::last(peer)+200}] > [clock microseconds]} {
+	if { [expr {$::last(peer)+200}] > [clock microseconds] } {
 		return	
 	}
 	set ::last(peer) [clock microseconds]
 	#log_puts "ALL" "check peers and buckets"
 	foreach {bkey bvalue} [array get ::b] {
-		if {[llength [array names ::peerstore [lindex [split $bkey {,}] 1]]] == 0} {
+		if { [llength [array names ::peerstore [lindex [split $bkey {,}] 1]]] == 0 } {
 			array unset ::b $bkey
 		}
 	}
@@ -6480,9 +6510,9 @@ proc sc_get_sources {hash} {
 
 	# wait for value by handle -> just set type
 
-	# value should be interpreted as a list of sources in triples, sources should be 
-	#	added to source store with (sha1 of file,sha1 of source) as key -> not here, in strategy for SOURCES response
-	#		or ignored 
+	# value should be interpreted as a list of sources in triples, sources should
+	# be added to source store with (sha1 of file,sha1 of source) as key -> not
+	# here, in strategy for SOURCES response or ignored 
 	array set ::waitvalue [list "$waitid,type" "sources"]
 	# schedule that (have a scheduler array?)
 	return $waitid
@@ -6534,9 +6564,9 @@ proc sc_get_headers {keys} {
 
 	# wait for value by handle
 	
-	# value should be interpreted as a "sha1:chunksize:chunks:epoch:from:to:subject" without content 
-	#		in b64 string, or ignored
-	#		when interpreted, added to store of search results by key (search id,handle)
+	# value should be interpreted as a "sha1:chunksize:chunks:epoch:from:to:subject"
+	# without content in b64 string, or ignored when interpreted, added to store
+	# of search results by key (search id,handle)
 	array set ::waitvalue [list "$waitid,type" "headers"]
 	# schedule that (have a scheduler array?)
 	lappend r $waitid
@@ -6682,6 +6712,7 @@ proc update_widgets {} {
 		lappend ::dbg(waitvalue,l) $line
 	}
 	after 1000 update_widgets
+	return
 }
 
 #proc udp_start {host port msg} {
@@ -6936,6 +6967,7 @@ proc tcp_send {host port msg} {
 	log_puts "ALL" "CLIENT FIRST DONE"
 	#set end [clock microseconds]
 	#log_puts "ALL" "time send [expr {$end-$start}]"
+	return
 }
 
 proc tcp_init {host port} {
@@ -7012,6 +7044,7 @@ proc tcp_send_timeout {s} {
 	catch { tcp_cleanup $s }
 	array unset ::tcp "socket,$s"
 	log_puts "ALL" "TCP SOCKETS [llength [array names ::tcp]]"
+	return
 }
 
 proc tcp_send_res {s host port sid} {
@@ -7051,6 +7084,7 @@ proc tcp_send_res {s host port sid} {
 		log_puts "ALL" "CLIENT BLOCKED"
 	}
 	log_puts "ALL" "CLIENT RES DONE"
+	return
 }
 
 #proc listen_handler {c} {
@@ -7070,6 +7104,7 @@ proc tcp_send_res {s host port sid} {
 #	} else {
 #		log_puts "ERR" "wrong, won't process"
 #	}
+#	return
 #}
 
 proc tcp_listen_handler {c host port} {
@@ -7098,12 +7133,14 @@ proc tcp_listen_handler {c host port} {
 	fconfigure $c -blocking 0 -buffering full -translation binary 
 	set sid [after 60000 [list tcp_listen_handler_timeout $c]]
 	fileevent $c readable [list tcp_listen_handler_cmd $c $host $port $sid]
+	return
 }
 
 proc tcp_listen_handler_timeout {c} {
 	catch { tcp_cleanup $c }
 	array unset ::tcp "socket,$c"
 	log_puts "ALL" "TCP SOCKETS [llength [array names ::tcp]]"
+	return
 }
 
 proc tcp_listen_handler_cmd {c host port sid} {
@@ -7146,6 +7183,7 @@ proc tcp_listen_handler_cmd {c host port sid} {
 		#log_puts "ALL" "SERVER BLOCKED"
 	}
 	#log_puts "ALL" "SERVER CMD DONE"
+	return
 }
 
 #proc listen {} {
@@ -8061,27 +8099,27 @@ proc str_find_value {s r a} {
 	return
 }
 
-proc elapsed_s {p since s} {
-	set ret {}
-	set now [clock seconds]
-	if { $now <= $since } {
-		return
-	}
-	set elapsed [expr {$now-$since}]
-	if { $elapsed < 3600 } {
-		return "$p recent"
-	}
-	foreach div {86400 3600 60} mod {0 24 50} name {day hr min} {
-		set n [expr {$elapsed/$div}]
-		if { $mod > 0 } { set n [expr {$n%$mod}] }
-		if { $n > 1 } { 
-			lappend ret "$n ${name}s"
-		} elseif { $n == 1 } {
-			lappend ret "$n $name"
-		}
-	}
-	return "$p [string trim [join $ret]] $s"
-}
+#proc elapsed_s {p since s} {
+#	set ret {}
+#	set now [clock seconds]
+#	if { $now <= $since } {
+#		return
+#	}
+#	set elapsed [expr {$now-$since}]
+#	if { $elapsed < 3600 } {
+#		return "$p recent"
+#	}
+#	foreach div {86400 3600 60} mod {0 24 50} name {day hr min} {
+#		set n [expr {$elapsed/$div}]
+#		if { $mod > 0 } { set n [expr {$n%$mod}] }
+#		if { $n > 1 } { 
+#			lappend ret "$n ${name}s"
+#		} elseif { $n == 1 } {
+#			lappend ret "$n $name"
+#		}
+#	}
+#	return "$p [string trim [join $ret]] $s"
+#}
 
 proc ml_showmsg {w hdr} {
 	array unset ::dlaction_by_hash "*"
@@ -8200,6 +8238,7 @@ proc ml_showmsg {w hdr} {
 		set bto {}
 	}
 	set bodylines [lrange $lines 5 end]
+
 	$w tag configure hhh -font {"Serif" 12}
 	$w tag configure hh -font {"Serif" 13}
 	$w tag configure h -font {"Serif" 14}
@@ -8221,11 +8260,11 @@ proc ml_showmsg {w hdr} {
 	$w tag configure inline_voice -foreground {#c060c0} -underline true
 	$w tag configure voicelink -foreground {#c060c0} -underline true
 	$w tag configure doclink -foreground {#c09060} -underline true
-	#$w insert end "[::msgcat::mc m_comment] -> $comment ; [clock format $epoch -format {%Y-%m-%d %H:%M:%S}][elapsed_s {,} [dict get $h epoch] {ago}]\n" {red}
+
 	if { $ver == "true" } {
 		$w insert end "[::msgcat::mc {Signed by}] -> $from\n" {green}
 	} elseif { $ver == "false" } {
-		$w insert end "[::msgcat::mc {Signed, check failed}]\n" {red}
+		$w insert end "[::msgcat::mc {Signed, check failed}] // $from\n" {red}
 	} else {
 		$w insert end "[::msgcat::mc {Not signed}]\n" {yellow}
 	}
@@ -8257,100 +8296,100 @@ proc disp_text {w bodylines} {
 }
 
 proc disp_line {w line} {
-		set first [lindex [split [string range $line 0 20] { }] 0]
-		switch $first {
-		"FILE"  {
-			set tag {blue filelink}
-		}
-		"LREC"  {
-			set tag {magenta voicelink}
-		}
-		"LIMG" {
-			if { $::options(linked_images) == 1 } {
-				set req [lindex [split $line {<>}] 1]
-				set d [dl_reqdict $req]
-				set name [dict get $d filename]
-				set ext [lindex [split $name {.}] end]
-				if { $ext == {png} || $ext == {PNG} } {
-					log_puts "ALL" "image req $req"
-					log_puts "ALL" "image d $d"
-					log_puts "ALL" "image name $name"
-					set hash [dict get $d filehash]
-					dl_add_image $w $req {}
-				}
+	set first [lindex [split [string range $line 0 20] { }] 0]
+	switch $first {
+	"FILE"  {
+		set tag {blue filelink}
+	}
+	"LREC"  {
+		set tag {magenta voicelink}
+	}
+	"LIMG" {
+		if { $::options(linked_images) == 1 } {
+			set req [lindex [split $line {<>}] 1]
+			set d [dl_reqdict $req]
+			set name [dict get $d filename]
+			set ext [lindex [split $name {.}] end]
+			if { $ext == {png} || $ext == {PNG} } {
+				log_puts "ALL" "image req $req"
+				log_puts "ALL" "image d $d"
+				log_puts "ALL" "image name $name"
+				set hash [dict get $d filehash]
+				dl_add_image $w $req {}
 			}
-			set tag {magenta imagelink}
 		}
-		"IMG" {
-			set sp [string first "<" $line]
-			set ep [string last ">" $line]
-			set imgdata [binary decode base64 [string range $line $sp+1 $ep-1]]
-			insert_image $w [$w index end] "Image" $imgdata 
-			set tag {}
-			return
-		}
-		"REC" {
-			set sp [string first {<} $line]
-			set ep [string first {>} $line]
-			set prefix [string range $line 0 [expr {$sp-1}]]
-			#$w insert end "Some voice record, don't have a canvas player\n" {}
-			$w insert end "$line " {hide inline_voice}
-			$w insert end "$prefix<...>\n" {inline_voice}
-			set tag {}
-			return
-		}
-		"GR" {
-			$w insert end "$line " {hide gr_scheme} 
-			set nline "GR scheme\n"
-			set line $nline
-			set tag {red gr_scheme}
-		}
-		"MYSM" {
-			$w insert end "$line " {hide mysm} 
-			set nline "MYSM program\n"
-			set line $nline
-			set tag {red mysm}
-		}
-		"HDR" {
-			$w insert end "$line " {hide headerlink} 
-			#set nline "[lrange $line 2 end] hash://[lindex [split [lindex $line 1] {:}] 0]\n"
-			set nline "[lindex $line 0] [lrange $line 2 end]\n"
-			set line $nline
-			set tag {blue headerlink}
-		}
-		"GRP" {
-			$w insert end "$line " {hide grouplink} 
-			#set nline "[lrange $line 2 end] group://[lindex [split [lindex $line 1] {:}] 0]\n"
-			set nline "[lindex $line 0] [lrange $line 2 end]\n"
-			set line $nline
-			set tag {blue grouplink}
-		}
-		"ATTACH" {
-			$w insert end "$line " {hide attachlink}
-			set nline "[string trim [lindex [split [string range $line 0 250] {()}] 0]]\n"
-			set line $nline
-			set tag {red attachlink}
-		}
-		"GDC" {
-			set tag {yellow doclink}
-		}
-		">" {
-			set tag {magenta}
-		}
-		"###" {
-			set tag {hhh}
-		}
-		"##" {
-			set tag {hh}
-		}
-		"#" {
-			set tag {h}
-		}
-		default {
-			set tag {} 
-		}
-		}
-		$w insert end "[string range $line 0 1000]\n" $tag
+		set tag {magenta imagelink}
+	}
+	"IMG" {
+		set sp [string first "<" $line]
+		set ep [string last ">" $line]
+		set imgdata [binary decode base64 [string range $line $sp+1 $ep-1]]
+		insert_image $w [$w index end] "Image" $imgdata 
+		set tag {}
+		return
+	}
+	"REC" {
+		set sp [string first {<} $line]
+		set ep [string first {>} $line]
+		set prefix [string range $line 0 [expr {$sp-1}]]
+		#$w insert end "Some voice record, don't have a canvas player\n" {}
+		$w insert end "$line " {hide inline_voice}
+		$w insert end "$prefix<...>\n" {inline_voice}
+		set tag {}
+		return
+	}
+	"GR" {
+		$w insert end "$line " {hide gr_scheme} 
+		set nline "GR scheme\n"
+		set line $nline
+		set tag {red gr_scheme}
+	}
+	"MYSM" {
+		$w insert end "$line " {hide mysm} 
+		set nline "MYSM program\n"
+		set line $nline
+		set tag {red mysm}
+	}
+	"HDR" {
+		$w insert end "$line " {hide headerlink} 
+		#set nline "[lrange $line 2 end] hash://[lindex [split [lindex $line 1] {:}] 0]\n"
+		set nline "[lindex $line 0] [lrange $line 2 end]\n"
+		set line $nline
+		set tag {blue headerlink}
+	}
+	"GRP" {
+		$w insert end "$line " {hide grouplink} 
+		#set nline "[lrange $line 2 end] group://[lindex [split [lindex $line 1] {:}] 0]\n"
+		set nline "[lindex $line 0] [lrange $line 2 end]\n"
+		set line $nline
+		set tag {blue grouplink}
+	}
+	"ATTACH" {
+		$w insert end "$line " {hide attachlink}
+		set nline "[string trim [lindex [split [string range $line 0 250] {()}] 0]]\n"
+		set line $nline
+		set tag {red attachlink}
+	}
+	"GDC" {
+		set tag {yellow doclink}
+	}
+	">" {
+		set tag {magenta}
+	}
+	"###" {
+		set tag {hhh}
+	}
+	"##" {
+		set tag {hh}
+	}
+	"#" {
+		set tag {h}
+	}
+	default {
+		set tag {} 
+	}
+	}
+	$w insert end "[string range $line 0 1000]\n" $tag
 }
 
 # command for personal mail is PWT for headers, usual EML to ask with hashes
@@ -8647,69 +8686,69 @@ proc ml_grouphead {group} {
 	return
 }
 
-proc ml_showhier {hdrlist} {
-	dom createDocument root root
-
-	foreach hdr $hdrlist {
-		set hash {}
-
-		catch { set hash [dict get [header_to_dict $hdr] hash] }
-		if { $hash == "" } {
-			continue
-		}
-
-		ml_hierfillrec $root $hash
-
-	}
-
-	ml_disphierrec $root 0
-
-}
-
-proc ml_disphierrec {node dep} {
-	foreach child [$node childNodes] {
-
-		set name {}
-		set subj {}
-		set name [$child nodeName]
-		set eml {}
-		set hash {}
-
-		if { $name == "name" } {
-			set subj [$child nodeValue]
-		} elseif { $val == "eml" } {
-			set eml [$child nodeValue]
-		} else {
-			ml_disphierrec $child [expr "$dep+1"]
-		}
-		if { $subj != {} && $val != {} } {
-			log_puts "ALL" "DISPHIER $node $subj [string range $eml 0 15]..."
-		}
-	}
-}
-
-proc ml_hierfillrec {root hash} {
-
-	set eml [ml_get_eml all $hash]
-	set bodylines [split $eml "\n"]
-	set sline [lindex $eml 2]
-	set pline [lindex $eml 5]
-	set s [string range $pline 0 2]
-	
-	if { $s == "HDR" } {
-		set phash [lindex $pline 1]
-		ml_hierfillrec $root $phash
-	}	else {
-		set phash $root
-	}
-	
-	$phash appendChild $hash
-	$hash appendChild name
-	$hash appendChild eml
-	[[$hash firstChild] nodeValue $name]
-	[[$hash lastChild] nodeValue $eml]
-
-}
+#proc ml_showhier {hdrlist} {
+#	dom createDocument root root
+#
+#	foreach hdr $hdrlist {
+#		set hash {}
+#
+#		catch { set hash [dict get [header_to_dict $hdr] hash] }
+#		if { $hash == "" } {
+#			continue
+#		}
+#
+#		ml_hierfillrec $root $hash
+#
+#	}
+#
+#	ml_disphierrec $root 0
+#
+#}
+#
+#proc ml_disphierrec {node dep} {
+#	foreach child [$node childNodes] {
+#
+#		set name {}
+#		set subj {}
+#		set name [$child nodeName]
+#		set eml {}
+#		set hash {}
+#
+#		if { $name == "name" } {
+#			set subj [$child nodeValue]
+#		} elseif { $val == "eml" } {
+#			set eml [$child nodeValue]
+#		} else {
+#			ml_disphierrec $child [expr "$dep+1"]
+#		}
+#		if { $subj != {} && $val != {} } {
+#			log_puts "ALL" "DISPHIER $node $subj [string range $eml 0 15]..."
+#		}
+#	}
+#}
+#
+#proc ml_hierfillrec {root hash} {
+#
+#	set eml [ml_get_eml all $hash]
+#	set bodylines [split $eml "\n"]
+#	set sline [lindex $eml 2]
+#	set pline [lindex $eml 5]
+#	set s [string range $pline 0 2]
+#	
+#	if { $s == "HDR" } {
+#		set phash [lindex $pline 1]
+#		ml_hierfillrec $root $phash
+#	}	else {
+#		set phash $root
+#	}
+#	
+#	$phash appendChild $hash
+#	$hash appendChild name
+#	$hash appendChild eml
+#	[[$hash firstChild] nodeValue $name]
+#	[[$hash lastChild] nodeValue $eml]
+#
+#}
 
 proc rule_check {group hdr rule} {
 	set g [ml_groupdict $group]
