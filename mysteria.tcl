@@ -714,11 +714,11 @@ proc show_contactform {} {
 }
 
 proc show_directory_search_cmd {} {
-	if { [.d.e.s cget -state] == normal } {
-		.d.e.s configure -state active
+	if { [.d.e.s cget -state] == "normal" } {
+		.d.e.s configure -state "active"
 		show_contacts [sc_get_contacts [prep_contact_keys $::contactfield]]
 	} else {
-		.d.e.s configure -state normal
+		.d.e.s configure -state "normal"
 		sc_stop $::contactsearch
 	}
 	return
@@ -1001,11 +1001,11 @@ proc show_groupform {} {
 }
 
 proc show_group_directory_search_cmd {} {
-	if { [.gd.e.s cget -state] == normal } {
-		.gd.e.s configure -state active
+	if { [.gd.e.s cget -state] == "normal" } {
+		.gd.e.s configure -state "active"
 		show_groups [sc_get_groups [prep_group_keys $::groupfield(main)]]
 	} else {
-		.gd.e.s configure -state normal
+		.gd.e.s configure -state "normal"
 		sc_stop $::groupsearch
 	}
 	return
@@ -2985,19 +2985,19 @@ proc show_mail_delete_cmd {num} {
 
 proc show_mail_search_cmd {} {
 	if { $::cur(main,mode) == {m} } {
-		if { [.m.b.gtr cget -state] == normal } { 
-			.m.b.gtr configure -state active
+		if { [.m.b.gtr cget -state] == "normal" } { 
+			.m.b.gtr configure -state "active"
 		} else {
 			sc_stop $::search
-			.m.b.gtr configure -state normal
+			.m.b.gtr configure -state "normal"
 		}
 		show_headers [sc_get_headers [prep_header_keys [build_personal_filter]]]
 	} elseif { $::cur(main,mode) == {n} && $::searchfield(main) != {} }  {
-		if { [.m.b.gtr cget -state] == normal } { 
-			.m.b.gtr configure -state active
+		if { [.m.b.gtr cget -state] == "normal" } { 
+			.m.b.gtr configure -state "active"
 		} else {
 			sc_stop $::search
-			.m.b.gtr configure -state normal
+			.m.b.gtr configure -state "normal"
 		}
 		show_headers [sc_get_headers [prep_header_keys $::searchfield(main)]]
 	} elseif { $::cur(main,mode) == {g} && $::cur(main,group,h) != {} }  {
@@ -3356,8 +3356,35 @@ proc show_contact_selection {} {
 	}	
 	bind .sbs.f.l <Key-Return> $choose_cmd
 }
+proc show_editor_commit_cmd {} {
+	if { $::cur(main,mode) == {p} } {
+		ml_add_hdrs mlphdr [dict get [contact_to_dict $::cur(main,person,h)] peerid] [form_message]
+		destroy .e
+	} elseif { $::cur(main,mode) == {g} } {
+		ml_add_hdrs mlhdr [dict get [ml_groupdict $::cur(main,group,h)] gid] [form_message]
+		destroy .e
+	} elseif { $::cur(main,mode) == {m} || $::cur(main,mode) == {n} } {
+		sc_out [ form_message ]
+		destroy .e
+	} else {
+		log_puts "ERR" "show_editor_commit_cmd strange mode" 
+		form_message
+		destroy .e
+	}
+	return
+}
 
 proc show_editor {contact} {
+	if { $::cur(main,mode) == {p} } {
+		log_puts "ERR" "show_editor mode $::cur(main,mode)"
+	} elseif { $::cur(main,mode) == {g} } {
+		log_puts "ERR" "show_editor mode $::cur(main,mode)"
+	} elseif { $::cur(main,mode) == {m} || $::cur(main,mode) == {n} } {
+		log_puts "ERR" "show_editor mode $::cur(main,mode)"
+	} else {
+		log_puts "ERR" "show_editor no mode"
+		return
+	}
 	if { $::cur(main,mode) == "g" && [llength $::cur(main,group,h)] == 0 } {
 		show_group_selection
 	}
@@ -3365,12 +3392,12 @@ proc show_editor {contact} {
 		show_contact_selection
 	}
 	if { $::cur(main,mode) == "m" && [llength $contact] == 0 } {
-		log_puts "ERR" "ERR no contact : got $contact"
+		log_puts "ERR" "show_editor no contact"
 		show_contact_selection
 	}
 	
 	if { [winfo exists .e] == 1 } {
-		log_puts "ERR" "ERR window exists"
+		log_puts "ERR" "show_editor window exists"
 		return
 	}
 
@@ -3388,14 +3415,16 @@ proc show_editor {contact} {
 	}
 
 	set toggle_cmd {
-	if { [ ".e.p" panecget ".e.h" -hide ] } {
-		".e.p" paneconfigure ".e.h" -hide false
-		".e.p" paneconfigure ".e.ti" -hide false
-	} else {
-		".e.p" paneconfigure ".e.h" -hide true
-		".e.p" paneconfigure ".e.ti" -hide true
+		if { [ ".e.p" panecget ".e.h" -hide ] } {
+			".e.p" paneconfigure ".e.h" -hide false
+			".e.p" paneconfigure ".e.ti" -hide false
+		} else {
+			".e.p" paneconfigure ".e.h" -hide true
+			".e.p" paneconfigure ".e.ti" -hide true
+		}
 	}
-	}
+
+	set commit_cmd { show_editor_commit_cmd }
 
 	toplevel .e
 	wm title .e [::msgcat::mc "editor_t"] 
@@ -3457,15 +3486,7 @@ proc show_editor {contact} {
 	#pack [wbutton .e.ti.img -text "inline image"  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command "insert_inline_image e {}"] -fill both -side right 
 	#pack [wbutton .e.ti.rec -text "inline voice"  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command {}] -fill both -side right 
 	.e.p add [wframe .e.t] -minsize 24 -stretch never
-	if { $::cur(main,mode) == {p} } {
-		pack [wbutton .e.t.v -text [::msgcat::mc "commit"] -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command {ml_add_hdrs mlphdr [dict get [contact_to_dict $::cur(main,person,h)] peerid] [form_message] ; destroy .e } ] -fill both -side right
-	} elseif { $::cur(main,mode) == {g} } {
-		pack [wbutton .e.t.v -text [::msgcat::mc "commit"] -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command {ml_add_hdrs mlhdr [dict get [ml_groupdict $::cur(main,group,h)] gid] [form_message] ; destroy .e } ] -fill both -side right
-	} elseif { $::cur(main,mode) == {m} || $::cur(main,mode) == {n} } {
-		pack [wbutton .e.t.v -text [::msgcat::mc "commit"] -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command {sc_out [form_message ] ; destroy .e } ] -fill both -side right
-	} else {
-		pack [wbutton .e.t.v -text [::msgcat::mc "commit"] -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command {form_message ; destroy .e } ] -fill both -side right
-	}
+	pack [wbutton .e.t.v -text [::msgcat::mc "commit"] -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) -command $commit_cmd ] -fill both -side right
 	pack [wbutton .e.t.h -text [::msgcat::mc "+"] -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command $toggle_cmd ] -fill both -side right
 	#bind .e.ti.rec <ButtonPress-1> "record_voice_start .e" 
 	#bind .e.ti.rec <ButtonRelease-1> "record_voice_end ; insert_inline_voice e {}"
@@ -6516,7 +6537,7 @@ proc sc_stop {ids} {
 	if { $ids == "" } {
 		log_puts "ERR" "sc_stop empty ids, return"
 		return
-	} else if { $ids == "all" } {
+	} elseif { $ids == "all" } {
 		log_puts "ERR" "sc_stop all, return"
 		after 5000 [list array unset ::waitvalue "*"]
 	} else {
