@@ -712,6 +712,17 @@ proc show_contactform {} {
 	pack [wentry .cf.b5.city -textvariable ::card(city) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -selectforeground $::options(basecolor) -selectbackground $::options(hilightcolor) -font $::options(font) -width 24 ] -fill both -side right
 }
 
+proc show_directory_search_cmd {} {
+	if { [.d.e.s cget -state] == normal } {
+		.d.e.s configure -state active
+		show_contacts [sc_get_contacts [prep_contact_keys $::contactfield]]
+	} else {
+		.d.e.s configure -state normal
+		sc_stop $::contactsearch
+	}
+	return
+}
+
 proc show_directory {} {
 	if { [winfo exists .d] == 1} {
 		return
@@ -723,16 +734,7 @@ proc show_directory {} {
 	pack [wbutton .d.e.c -text [::msgcat::mc "create"] -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command {show_contactform}] -fill both -side left 
 	pack [wbutton .d.e.p -text [::msgcat::mc "publish"] -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command {sc_publishcontact $::me(contact)}] -fill both -side left 
 	pack [wentry .d.e.e -textvariable ::contactfield -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -selectforeground $::options(basecolor) -selectbackground $::options(hilightcolor) -font $::options(listfont) ] -fill both -side left
-	pack [wbutton .d.e.s -text [::msgcat::mc "search"] -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command {
-		.d.e.s configure -state disabled;
-		.d.e.st configure -state normal;
-		show_contacts [sc_get_contacts [prep_contact_keys $::contactfield]]
-	}] -fill both -side right
-	pack [wbutton .d.e.st -text [::msgcat::mc "stop"] -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command {
-		.d.e.s configure -state normal; 
-		.d.e.st configure -state disabled;
-		sc_stop $::contactsearch
-	} -state disabled] -fill both -side right
+	pack [wbutton .d.e.s -text [::msgcat::mc "search"] -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command "show_directory_search_cmd"] -fill both -side right
 	#pack [wbutton .d.e.o -text [::msgcat::mc "mail"] -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command {set ::cur(main,mode) {p} ; set ::cur(main,person,h) [lindex $::contactlist(main,k) [lindex [.d.l.l index active] 0]] ; show_editor {}}] -fill both -side right
 	#pack [wbutton .d.e.det -text [::msgcat::mc "detail"] -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command {show_buddy_details [lindex $::contactlist(main,k) [lindex [.d.l.l index active] 0]]}] -fill both -side right
 	pack [wbutton .d.e.cht -text [::msgcat::mc "add"] -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command {chat_offer [chat_add [lindex $::contactlist(main,k) [lindex [.d.l.l index active] 0]]] ; destroy .d}] -fill both -side right
@@ -957,6 +959,17 @@ proc show_groupform {} {
 	}
 }
 
+proc show_group_directory_search_cmd {} {
+	if { [.gd.e.s cget -state] == normal } {
+		.gd.e.s configure -state active
+		show_groups [sc_get_groups [prep_group_keys $::groupfield(main)]]
+	} else {
+		.gd.e.s configure -state normal
+		sc_stop $::groupsearch
+	}
+	return
+}
+
 proc show_group_directory {} {
 	if { [winfo exists .gd] == 1} {
 		return
@@ -967,16 +980,7 @@ proc show_group_directory {} {
 	.gd.p add [wframe ".gd.e"]
 	pack [wbutton .gd.e.c -text [::msgcat::mc "create"]  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command {show_groupform}] -fill both -side left 
 	pack [wentry .gd.e.e -textvariable ::groupfield(main) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -selectforeground $::options(basecolor) -selectbackground $::options(hilightcolor) -font $::options(listfont) ] -fill both -side left
-	pack [wbutton .gd.e.s -text [::msgcat::mc "search"]  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command {
-		.gd.e.s configure -state disabled;
-		.gd.e.st configure -state normal;
-		show_groups [sc_get_groups [prep_group_keys $::groupfield(main)]]
-	}] -fill both -side right
-	pack [wbutton .gd.e.st -text [::msgcat::mc "stop"]  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command {
-		.gd.e.s configure -state normal; 
-		.gd.e.st configure -state disabled;
-		sc_stop $::groupsearch
-	} -state disabled] -fill both -side right
+	pack [wbutton .gd.e.s -text [::msgcat::mc "search"]  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command "show_group_directory_search_cmd"] -fill both -side right
 	pack [wbutton .gd.e.o -text [::msgcat::mc "detail"]  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command {show_group_details [lindex $::grouplist(main,k) [lindex [.gd.l.l index active] 0]] ; destroy .gd}] -fill both -side right
 	.gd.p add [wframe ".gd.l"]
 	pack [wscrollbar .gd.l.y -activebackground $::options(hilightcolor)  -troughcolor $::options(hilightcolor)  -command ".gd.l.l yview"] -fill y -side right
@@ -2132,6 +2136,7 @@ proc dl_add_image {w req buddyhash} {
 }
 
 proc insert_image {w pos name data} {
+	log_puts "ALL" "insert_image w $w pos $pos name $name"
 	if { [winfo exists $w] == 0 && [winfo exists "$w-c"] == 0 } {
 		log_puts "ERR" "insert_image no such window $w"
 		return
@@ -2186,6 +2191,7 @@ proc insert_image {w pos name data} {
 	$w image create $pos -image $simg -padx 4 -pady 4
 	#$w insert $pos "$imgdesc\n" {magenta}
 
+	log_puts "ALL" "insert_image end"
 	return
 }
 
@@ -2815,182 +2821,237 @@ proc show_debug {} {
 	update_widgets
 }
 
+proc show_mail_detail_cmd {} {
+	if { $::cur(main,mode) == {p} } {
+		set l_b [array get ::buddies]
+		set l_bn [lsearch $l_b $::cur(main,person,h)]
+		set l_hash [lindex $l_b [expr {$l_bn-1}]]
+		show_buddy_details $l_hash 
+	} elseif { $::cur(main,mode) == {g} } {
+		show_group_details $::cur(main,group,h) 	
+	}
+	return
+}
+
+proc show_mail_browse_cmd {} {
+	if { $::cur(main,mode) == {p} } {
+		ml_personbrowse $::cur(main,person,h)
+	}
+	return
+}
+
+proc show_mail_chat_cmd {} {
+	if { $::cur(main,mode) == {p} && $::cur(main,person,h) != "" } {
+		set l_b [array get ::buddies]
+		set l_bn [lsearch $l_b $::cur(main,person,h)]
+		set l_hash [lindex $l_b [expr {$l_bn-1}]]
+		show_gchatwindow chat $l_hash 
+	} elseif { $::cur(main,mode) == {g} && $::cur(main,group,h) != "" } {
+		set l_gid [dict get [ml_groupdict $::cur(main,group,h)] gid]
+		show_gchatwindow gchat $l_gid
+	}
+	return
+}
+
+proc show_mail_doc_cmd {} {
+	if { $::cur(main,mode) == {g} && $::cur(main,group,h) != "" } {
+		set l_gid [dict get [ml_groupdict $::cur(main,group,h)] gid]
+		show_doc_list mlhdr $l_gid
+	}
+	return
+}
+
+proc show_mail_gmail_cmd {} {
+	if { $::cur(main,mode) == {g} && $::cur(main,group,h) != "" } {
+		set gid [dict get [ml_groupdict $::cur(main,group,h)] gid]
+		show_gmailwindow $gid
+	}
+	return
+}
+
+proc show_mail_reply_cmd {num} {
+	if { $num == {} } {
+		set hdr $::cur(main,header)
+	} else {
+		set hdr [lindex $::msglist(main,k) $num]
+	}
+	if { $hdr == {} } {
+		return
+	}
+	if { $::cur(main,mode) == {m} } {	
+		show_editor [mail_header_to_contact $hdr]
+		set ::parent(main) $hdr
+	} elseif { $::cur(main,mode) == {p} && $::cur(main,person,h) != "" } {	
+		set ::subject(main) "Re:[dict get [header_to_dict $hdr] subject]"
+		set ::parent(main) $hdr
+		show_editor {}
+	} elseif { $::cur(main,mode) == {g} && $::cur(main,group,h) != "" } {	
+		set ::subject(main) "Re:[dict get [header_to_dict $hdr] subject]"
+		set ::parent(main) $hdr
+		show_editor {}
+	} elseif { $::cur(main,mode) == {n} } {
+		set ::cur(main,mode) {n};
+		set ::subject(main) "Re:[dict get [header_to_dict $hdr] subject]"
+		set ::parent(main) $hdr
+		show_editor [mail_header_to_contact $hdr]
+	}
+	return
+}
+
+proc show_mail_emit_cmd {} {
+	if { $::cur(main,mode) == {m} } {
+		set ::subject(main) {}
+		set ::parent(main) {}
+		show_editor {}
+	} elseif { $::cur(main,mode) == {p} && $::cur(main,person,h) != "" } {
+		set ::subject(main) {}
+		set ::parent(main) {}
+		show_editor {}
+	} elseif { $::cur(main,mode) == {g} && $::cur(main,group,h) != "" } {
+		set ::subject(main) {}
+		set ::parent(main) {}
+		show_editor {}
+	} elseif { $::cur(main,mode) == {n} }  {
+		set ::cur(main,mode) {n};
+		set ::subject(main) {}
+		set ::parent(main) {}
+		show_editor {}	
+	}
+	return
+}
+
+proc show_mail_delete_cmd {num} {
+	if { $num == {} } {
+		set hdr $::cur(main,header)
+	} else {
+		set hdr [lindex $::msglist(main,k) $num]
+	}
+	if { $hdr == {} } {
+		return
+	}
+	if { $::cur(main,mode) != {p} && $::cur(main,mode) != {g} } {	
+		return
+	}
+	set hash [dict get [header_to_dict $hdr] hash]
+	set choice [tk_dialog .mdd [::msgcat::mc "mdel_t"] [::msgcat::mc "mdel_l" $hash] {} 0 [::msgcat::mc "cancel"] [::msgcat::mc "ok"]]
+	if { $choice == 1 } {
+		ml_add_del $hash
+		.m.p paneconfigure .m.x -hide false
+		.m.p paneconfigure .m.f -hide $::options(hide_pane) 
+	}
+	return
+}
+
+proc show_mail_search_cmd {} {
+	if { $::cur(main,mode) == {m} } {
+		if { [.m.b.gtr cget -state] == normal } { 
+			.m.b.gtr configure -state active
+		} else {
+			sc_stop $::search
+			.m.b.gtr configure -state normal
+		}
+		show_headers [sc_get_headers [prep_header_keys [build_personal_filter]]]
+	} elseif { $::cur(main,mode) == {n} && $::searchfield(main) != {} }  {
+		if { [.m.b.gtr cget -state] == normal } { 
+			.m.b.gtr configure -state active
+		} else {
+			sc_stop $::search
+			.m.b.gtr configure -state normal
+		}
+		show_headers [sc_get_headers [prep_header_keys $::searchfield(main)]]
+	} elseif { $::cur(main,mode) == {g} && $::cur(main,group,h) != {} }  {
+		ml_grouphead $::cur(main,group,h)
+	} elseif { $::cur(main,mode) == {p} && $::cur(main,person,h) != {} }  {
+		ml_personhead $::cur(main,person,h)
+	}
+	return
+}
+
+proc show_mail_filter_cmd {} {
+	if { $::cur(main,mode) == {g} && $::cur(main,group,h) != {} } {
+		ml_showlist g [dict get [ml_groupdict $::cur(main,group,h)] gid]
+	} elseif { $::cur(main,mode) == {p} && $::cur(main,person,h) != {} } {
+		ml_showlist p [dict get [contact_to_dict $::cur(main,person,h)] peerid]
+	}
+	return
+}
+
+proc show_mail_read_cmd {num} {
+	if { $num == {} } {
+		set hdr $::cur(main,header)
+	} else {
+		set hdr [lindex $::msglist(main,k) $num]
+	}
+	if { $hdr == {} } {
+		return
+	}
+	if { $::cur(main,mode) == {m} || $::cur(main,mode) == {n} } {
+		set ::cur(main,header) $hdr
+		show_text [sc_ask $::cur(main,header)]
+	} elseif { $::cur(main,mode) == {g} || $::cur(main,mode) == {p} } {
+		set ::cur(main,header) $hdr
+		ml_showmsg .m.f.t $::cur(main,header)
+		if { [.m.p panecget .m.x -hide] } {
+			.m.p paneconfigure .m.x -hide false
+			.m.p paneconfigure .m.f -hide $::options(hide_pane)
+		} else {
+			.m.p paneconfigure .m.f -hide false
+			.m.p paneconfigure .m.x -hide $::options(hide_pane)
+		}
+		set ::recent(main) [lsort -unique [lrange $::recent(main) end-100 end]]
+		lappend ::recent(main) $::cur(main,header)
+	}
+	return
+}
+
 proc show_mail {} {
 	if { [winfo exists .m] == 1 } {
 		return
 	}
 	toplevel .m
-	wm title .m  [::msgcat::mc "mail_t" $::options(myport) $::me(nickname) $::me(id)]
+	wm title .m [::msgcat::mc "mail_t" $::options(myport) $::me(nickname) $::me(id)]
 	make_menu .m
 	make_nmenu
 
-	set detail_cmd {
-		if { $::cur(main,mode) == {p} } {
-			set l_b [array get ::buddies]
-			set l_bn [lsearch $l_b $::cur(main,person,h)]
-			set l_hash [lindex $l_b [expr {$l_bn-1}]]
-			show_buddy_details $l_hash 
-		} elseif { $::cur(main,mode) == {g} } {
-			show_group_details $::cur(main,group,h) 	
-		}
-	}
+	set detail_cmd { show_mail_detail_cmd }
 
-	set browse_cmd {
-		if { $::cur(main,mode) == {p} } {
-			ml_personbrowse $::cur(main,person,h)
-		}
-	}
+	set browse_cmd { show_mail_browse_cmd }
 
-	set chat_cmd {
-		if { $::cur(main,mode) == {p} && $::cur(main,person,h) != "" } {
-			set l_b [array get ::buddies]
-			set l_bn [lsearch $l_b $::cur(main,person,h)]
-			set l_hash [lindex $l_b [expr {$l_bn-1}]]
-			show_gchatwindow chat $l_hash 
-		} elseif { $::cur(main,mode) == {g} && $::cur(main,group,h) != "" } {
-			set l_gid [dict get [ml_groupdict $::cur(main,group,h)] gid]
-			show_gchatwindow gchat $l_gid
-		}
-	}
+	set chat_cmd { show_mail_chat_cmd }
 
-	set doc_cmd {
-		if { $::cur(main,mode) == {g} && $::cur(main,group,h) != "" } {
-			set l_gid [dict get [ml_groupdict $::cur(main,group,h)] gid]
-			show_doc_list mlhdr $l_gid
-		}
+	set doc_cmd { show_mail_doc_cmd }
 	
-	}
-	
-	set mail_cmd {
-		if { $::cur(main,mode) == {g} && $::cur(main,group,h) != "" } {
-			set gid [dict get [ml_groupdict $::cur(main,group,h)] gid]
-			show_gmailwindow $gid
-		}
-	}
+	set mail_cmd { show_mail_gmail_cmd }
 
 	set reply_cmd {
-		if { $::cur(main,mode) == {m} } {	
-			show_editor [mail_header_to_contact [lindex $::msglist(main,k) [lindex [.m.x.ls index active] 0]]]
-			set ::parent(main) [lindex $::msglist(main,k) [lindex [.m.x.ls index active] 0]]
-		} elseif { $::cur(main,mode) == {p} && $::cur(main,person,h) != "" } {	
-			if { [.m.p panecget .m.x -hide] } {
-				set ::subject(main) "Re:[dict get [header_to_dict $::cur(main,header)] subject]"
-				set ::parent(main) $::cur(main,header)
-			} else {
-				set ::subject(main) "Re:[dict get [header_to_dict [lindex $::msglist(main,k) [lindex [.m.x.ls index active] 0]]] subject]";
-				set ::parent(main) [lindex $::msglist(main,k) [lindex [.m.x.ls index active] 0]]
-			}
-			show_editor {}
-		} elseif { $::cur(main,mode) == {g} && $::cur(main,group,h) != "" } {	
-			if { [.m.p panecget .m.x -hide] } {
-				set ::subject(main) "Re:[dict get [header_to_dict $::cur(main,header)] subject]"
-				set ::parent(main) $::cur(main,header)
-			} else {
-				set ::subject(main) "Re:[dict get [header_to_dict [lindex $::msglist(main,k) [lindex [.m.x.ls index active] 0]]] subject]";
-				set ::parent(main) [lindex $::msglist(main,k) [lindex [.m.x.ls index active] 0]]
-			}
-			show_editor {}
-		} elseif { $::cur(main,mode) == {n} } {
-			set ::cur(main,mode) {n};
-			set ::subject(main) "Re:[dict get [header_to_dict [lindex $::msglist(main,k) [lindex [.m.x.ls index active] 0]]] subject]";
-			set ::parent(main) [lindex $::msglist(main,k) [lindex [.m.x.ls index active] 0]]
-			show_editor [mail_header_to_contact [lindex $::msglist(main,k) [lindex [.m.x.ls index active] 0]]]
-		}
+		set num [lindex [.m.x.ls index active] 0]
+		show_mail_reply_cmd $num
 	}
 
-	set emit_cmd {
-		if { $::cur(main,mode) == {m} } {
-			set ::subject(main) {}
-			set ::parent(main) {}
-			show_editor {}
-		} elseif { $::cur(main,mode) == {p} && $::cur(main,person,h) != "" } {
-			set ::subject(main) {}
-			set ::parent(main) {}
-			show_editor {}
-		} elseif { $::cur(main,mode) == {g} && $::cur(main,group,h) != "" } {
-			set ::subject(main) {}
-			set ::parent(main) {}
-			show_editor {}
-		} elseif { $::cur(main,mode) == {n} }  {
-			set ::cur(main,mode) {n};
-			set ::subject(main) {}
-			set ::parent(main) {}
-			show_editor {}	
-		}
-	}
+	set emit_cmd { show_mail_emit_cmd }
 
 	set delete_cmd {
-		if { $::cur(main,mode) == {p} || $::cur(main,mode) == {g} } {	
-			if { [.m.p panecget .m.x -hide] && $::cur(main,header) != {} } {
-				set hash [dict get [header_to_dict $::cur(main,header)] hash]
-			} else {
-				set hash [dict get [header_to_dict [lindex $::msglist(main,k) [lindex [.m.x.ls index active] 0]]] hash]
-			}
-			set choice [tk_dialog .mdd [::msgcat::mc "mdel_t"] [::msgcat::mc "mdel_l" $hash] {} 0 [::msgcat::mc "cancel"] [::msgcat::mc "ok"]]
-			if { $choice == 1 } {
-				ml_add_del $hash
-				.m.p paneconfigure .m.x -hide false
-				.m.p paneconfigure .m.f -hide $::options(hide_pane) 
-			}
-		}
+		set num [lindex [.m.x.ls index active] 0]
+		show_mail_delete_cmd $num
 	}
 
-	set search_cmd {
-		if { $::cur(main,mode) == {m} } {
-			.m.b.gtr configure -state disabled;
-			.m.b.gtrs configure -state normal;
-			show_headers [sc_get_headers [prep_header_keys [build_personal_filter]]]
-		} elseif { $::cur(main,mode) == {n} && $::searchfield(main) != {} }  {
-			.m.b.gtr configure -state disabled;
-			.m.b.gtrs configure -state normal;
-			show_headers [sc_get_headers [prep_header_keys $::searchfield(main)]]
-		} elseif { $::cur(main,mode) == {g} && $::cur(main,group,h) != {} }  {
-			ml_grouphead $::cur(main,group,h)
-		} elseif { $::cur(main,mode) == {p} && $::cur(main,person,h) != {} }  {
-			ml_personhead $::cur(main,person,h)
-		}
-	}
+	set search_cmd { show_mail_search_cmd }
 
-	#set stop_cmd {
-	#	.m.b.gtr configure -state normal
-	#	.m.b.gtrs configure -state disabled
-	#	sc_stop $::search
-	#}
-
-	set filter_cmd {
-		if { $::cur(main,mode) == {g} && $::cur(main,group,h) != {} } {
-			ml_showlist g [dict get [ml_groupdict $::cur(main,group,h)] gid]
-		} elseif { $::cur(main,mode) == {p} && $::cur(main,person,h) != {} } {
-			ml_showlist p [dict get [contact_to_dict $::cur(main,person,h)] peerid]
-		}
-	}
+	set filter_cmd { show_mail_filter_cmd }
 
 	set read_cmd {
-		if { $::cur(main,mode) == {m} || $::cur(main,mode) == {n} } {
-			show_text [sc_ask [lindex $::msglist(main,k) [lindex [.m.x.ls index active] 0]]]
-		} elseif { $::cur(main,mode) == {g} || $::cur(main,mode) == {p} } {
-			set ::cur(main,header) [lindex $::msglist(main,k) [lindex [.m.x.ls index active] 0]]
-			ml_showmsg .m.f.t $::cur(main,header)
-			if { [.m.p panecget .m.x -hide] } {
-				.m.p paneconfigure .m.x -hide false
-				.m.p paneconfigure .m.f -hide $::options(hide_pane)
-			} else {
-				.m.p paneconfigure .m.f -hide false
-				.m.p paneconfigure .m.x -hide $::options(hide_pane)
-			}
-			set ::recent(main) [lsort -unique [lrange $::recent(main) end-100 end]]
-			lappend ::recent(main) $::cur(main,header)
-		}
+		set num [lindex [.m.x.ls index active] 0]
+		show_mail_read_cmd $num
 	}
 
 	set toggle_tools {
-			if { [.m.p panecget .m.s -hide] } {
-				.m.p paneconfigure .m.s -hide false
-				.m.p paneconfigure .m.t -hide false
-			} else {
-				.m.p paneconfigure .m.s -hide true 
-				.m.p paneconfigure .m.t -hide true 
-			}
+		if { [.m.p panecget .m.s -hide] } {
+			.m.p paneconfigure .m.s -hide false
+			#.m.p paneconfigure .m.t -hide false
+		} else {
+			.m.p paneconfigure .m.s -hide true 
+			#.m.p paneconfigure .m.t -hide true 
+		}
 	}
 
 	pack [panedwindow .m.p -ori vert] -fill both -expand 1
@@ -3003,7 +3064,7 @@ proc show_mail {} {
 	pack [wbutton .m.b.scs -text [::msgcat::mc "p"]  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command {show_contact_selection}] -fill both -side left
 	pack [wbutton .m.b.sgs -text [::msgcat::mc "g"]  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command {show_group_selection}] -fill both -side left
 	#pack [wbutton .m.b.sms -text "m"  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command {set ::cur(main,mode) {m} }] -fill both -side left
-	#pack [wbutton .m.b.sns -text "n"  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command {set ::cur(main,mode) {n} }] -fill both -side left
+	pack [wbutton .m.b.sns -text "n"  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command {set ::cur(main,mode) {n} }] -fill both -side left
 	pack [wlabel .m.b.sep2 -text " " -width 1 -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -side left 
 	pack [wbutton .m.b.chat -text [::msgcat::mc "chat"]  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command $chat_cmd] -fill both -side left
 	pack [wbutton .m.b.doc -text [::msgcat::mc "doc"]  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command $doc_cmd] -fill both -side left
@@ -3011,7 +3072,6 @@ proc show_mail {} {
 	pack [wbutton .m.b.recent -text [::msgcat::mc "recent"] -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command "show_recent none none none"] -fill both -side left
 	pack [wbutton .m.b.gtr -text [::msgcat::mc "gather"]  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command $search_cmd] -fill both -side right
 	pack [wbutton .m.b.net -text [::msgcat::mc "net"]  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command "net_update"] -fill both -side right
-	#pack [wbutton .m.b.gtrs -text [::msgcat::mc "stop"]  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command $stop_cmd] -fill both -side right
 	pack [wlabel .m.b.sep0 -text " " -width 1 -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -side right
 	pack [wbutton .m.b.upd -text [::msgcat::mc "filter"]  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command $filter_cmd] -fill both -side right
 	pack [wentry .m.b.g -textvariable ::searchfield(main) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -selectforeground $::options(basecolor) -selectbackground $::options(hilightcolor) -font $::options(font) -width 20 ] -fill both -side right
@@ -3035,7 +3095,7 @@ proc show_mail {} {
 		-selectforeground {#6090c0} -selectbackground $::options(hilightcolor) \
 		-padx 5 -pady 3 -height 20 -width 60 -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(listfont)] \
 		-fill both -expand 1 -side right
-	.m.p add [panedwindow .m.t -ori ver] -minsize 24 -stretch always -hide true
+	.m.p add [panedwindow .m.t -ori ver] -minsize 24 -stretch always -hide false
 	foreach {key val} [array get ::transports "*,enable"] {
 		set name [lindex [split $key {,}] 0]
 		set copy $::transports($name,copy)
@@ -6377,17 +6437,25 @@ proc send_my_status {type comment} {
 }
 
 proc sc_stop {ids} {
+	log_puts "ALL" "sc_stop $ids"
+	set oldsearch $::search
+	log_puts "ALL" "sc_stop oldsearch $oldsearch"
 	set ::search {}
 	set ::text {}
 	if { $ids == "" } {
-		log_puts "ERR" "empty ids, return"
+		log_puts "ERR" "sc_stop empty ids, return"
 		return
-	}
-	foreach id $ids {
-		#foreach item [array names ::waitvalue "$id*"] {
-		#	array set ::waitvalue [list $item "DONE"]
-		#}
-		after 5000 [list array unset ::waitvalue "$id*"]
+	} else if { $ids == "all" } {
+		log_puts "ERR" "sc_stop all, return"
+		after 5000 [list array unset ::waitvalue "*"]
+	} else {
+		lappend ids {*}$oldsearch
+		foreach id $ids {
+			#foreach item [array names ::waitvalue "$id*"] {
+			#	array set ::waitvalue [list $item "DONE"]
+			#}
+			after 5000 [list array unset ::waitvalue "$id*"]
+		}
 	}
 	after 200 check_waitvalues
 	return
