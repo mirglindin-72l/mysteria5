@@ -350,23 +350,24 @@ proc store_select {} {
 }
 
 proc write_all {} {
-		log_puts "ALL" "write all"
-		write_id
-		write_port
-		write_contact
-		write_peers
-		write_buckets
-		write_values
-		write_contacts
-		write_headers
-		write_groups
-		write_jgroups
-		write_buddies
-		write_sources
-		write_files
-		write_dls
-		#write_keys
-		write_sig
+	log_puts "ALL" "write all"
+	write_id
+	write_port
+	write_contact
+	write_peers
+	write_buckets
+	write_values
+	write_contacts
+	write_headers
+	write_groups
+	write_jgroups
+	write_buddies
+	write_sources
+	write_files
+	write_dls
+	#write_keys
+	write_sig
+	return
 }
 
 proc every {ms body} {
@@ -744,6 +745,64 @@ proc show_directory {} {
 	pack [listbox .d.l.l -listvariable ::contactlist(main,l) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -selectforeground $::options(basecolor) -selectbackground $::options(hilightcolor) -font $::options(listfont) -height 12 -yscrollc ".d.l.y set"] -fill both -expand 1 -side right
 }
 
+proc show_group_details_rule_cmd {gid} {
+	set nmods {}
+	set nusers {}
+	set srcs [lrange [ml_get_srcs $gid] 2 end]
+	set gpeerid [dict get [ml_groupdict $::jgroups($gid)] peerid]
+	foreach src [lsort -unique $srcs] {
+		set role [lindex [array get ::sgf_sel "$gid,$src,role"] 1]
+		switch $role {
+			"mod" {
+				lappend nusers $src
+				lappend nmods $src
+			}
+			"user" {
+				lappend nusers $src
+			}
+		}
+	}
+	lappend nmods $gpeerid
+	set nmods [lsort -unique $nmods]
+	lappend nusers $gpeerid
+	set nusers [lsearch -all -inline -not -exact [lsort -unique $nusers] "*"]
+	set rule {}
+	dict set rule mods $nmods
+	dict set rule users $nusers
+	set ::rule($gid) $rule
+	rule_send $gid
+	return
+}
+
+proc show_group_details_add_cmd {group} {
+	if { $group == {} } {
+		return
+	}
+	set g [ml_groupdict $group]
+	if { $g == {} } {
+		return
+	}
+	set ::groups([dict get $g gid]) $group
+	set ::jgroups([dict get $g gid]) $group
+	ml_add_srcs [dict get $g gid] ${::me(id)}
+	after idle [list sc_publishcontact ${::me(contact)}]
+	after idle [list ml_grouphead $group]
+	destroy .sgf
+}
+
+proc show_group_details_delete_cmd {group} {
+	if { $group == {} } {
+		return
+	}
+	set g [ml_groupdict $group]
+	if { $g == {} } {
+		return
+	}
+	array unset ::jgroups [dict get $g gid]
+	after idle [list ml_grouphead $group]
+	destroy .sgf
+}
+
 proc show_group_details {group} {
 	if { [winfo exists .sgf] == 1} {
 		return
@@ -752,17 +811,23 @@ proc show_group_details {group} {
 		return
 	}
 	set g [ml_groupdict $group]
+	set add_cmd {
+		show_group_details_add_cmd $group
+	}
+	set delete_cmd {
+		show_group_details_delete_cmd $group
+	}
 	toplevel .sgf
 	wm title .sgf [::msgcat::mc "groupview_t"]
 	pack [panedwindow .sgf.p -ori vert] -fill both -expand 1
 	.sgf.p add [wframe .sgf.b1] -minsize 24 -stretch never
 	if { [array get ::jgroups [dict get $g gid]] == "" } {
-		pack [wbutton .sgf.b1.a -text [::msgcat::mc "add"]  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command "catch { set ::groups([dict get $g gid]) $group ; set ::jgroups([dict get $g gid]) $group ; ml_add_srcs [dict get $g gid] ${::me(id)} ;destroy .sgf ; after idle [list sc_publishcontact ${::me(contact)}] ; after idle [list ml_grouphead $group] }"] -fill both -side right
+		pack [wbutton .sgf.b1.a -text [::msgcat::mc "add"] -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) -command $add_cmd] -fill both -side right
 	} else {
-		#pack [wbutton .sgf.b1.c -text [::msgcat::mc "chat"]  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command "show_gchatwindow gchat [dict get $g gid]"] -fill both -side left
-		#pack [wbutton .sgf.b1.m -text [::msgcat::mc "mail"]  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command "show_gmailwindow [dict get $g gid]"] -fill both -side left
-		pack [wbutton .sgf.b1.pub -text [::msgcat::mc "publish"]  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command "sc_publishgroup $group"] -fill both -side left
-		pack [wbutton .sgf.b1.d -text [::msgcat::mc "delete"]  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command "array unset ::jgroups [dict get $g gid] ; destroy .sgf ; after idle [list ml_grouphead $group]"] -fill both -side right
+		#pack [wbutton .sgf.b1.c -text [::msgcat::mc "chat"] -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) -command "show_gchatwindow gchat [dict get $g gid]"] -fill both -side left
+		#pack [wbutton .sgf.b1.m -text [::msgcat::mc "mail"] -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) -command "show_gmailwindow [dict get $g gid]"] -fill both -side left
+		pack [wbutton .sgf.b1.pub -text [::msgcat::mc "publish"] -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) -command "sc_publishgroup $group"] -fill both -side left
+		pack [wbutton .sgf.b1.d -text [::msgcat::mc "delete"] -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) -command $delete_cmd] -fill both -side right
 	}
 	.sgf.p add [wframe .sgf.b2] -minsize 24 -stretch never
 	pack [wlabel .sgf.b2.lname -text "Name: " -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font)] -fill both -side left 
@@ -843,71 +908,74 @@ proc show_group_details {group} {
 			pack [wlabel .sgf.c_$src.role -text "$role" -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -side right
 		}
 	}
-	proc rule_cmd {gid} {
-		set nmods {}
-		set nusers {}
-		set srcs [lrange [ml_get_srcs $gid] 2 end]
-		set gpeerid [dict get [ml_groupdict $::jgroups($gid)] peerid]
-		foreach src [lsort -unique $srcs] {
-			set role [lindex [array get ::sgf_sel "$gid,$src,role"] 1]
-			switch $role {
-				"mod" {
-					lappend nusers $src
-					lappend nmods $src
-				}
-				"user" {
-					lappend nusers $src
-				}
-			}
-		}
-		lappend nmods $gpeerid
-		set nmods [lsort -unique $nmods]
-		lappend nusers $gpeerid
-		set nusers [lsearch -all -inline -not -exact [lsort -unique $nusers] "*"]
-		set rule {}
-		dict set rule mods $nmods
-		dict set rule users $nusers
-		set ::rule($gid) $rule
-		rule_send $gid
-	}
 	.sgf.p add [wframe .sgf.c] -minsize 24 -stretch never
 	if { [lsearch -all -inline $mods $::me(id)] != {} } {
-		pack [wbutton .sgf.c.s -text [::msgcat::mc "post control rule"] -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) -command "rule_cmd $gid" ] -fill both -side right 
+		pack [wbutton .sgf.c.s -text [::msgcat::mc "post control rule"] -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) -command "show_group_details_rule_cmd $gid" ] -fill both -side right 
 	}
+	return
+}
+proc show_groupform_generate_cmd {} {
+	set key [.gf.b6.key get 1.0 end]
+	set gkey {}
+	catch {
+	set gkey [crypto_parse_priv $key]
+	}
+	if { $gkey == "" } {
+		set gkey [crypto_gen 1024]
+		set key [crypto_exp_priv $gkey]
+	}
+	set gpkey [crypto_exp_pub $gkey]
+	set gid [crypto_cksum -hex $gpkey]
+	set psig [crypto_sig $::me(id) $gkey]
+	set ::g_key $key
+	set ::gcard(pkey) $gpkey
+	set ::gcard(gid) $gid
+	.gf.b6.key delete 1.0 end
+	.gf.b6.key insert end $key
+	set g {}
+	dict set g gid ${::gcard(gid)}
+	dict set g name [lindex [array get ::gcard name] end]
+	dict set g desc [lindex [array get ::gcard desc] end]
+	dict set g pkey ${::gcard(pkey)}
+	dict set g epoch [clock seconds] 
+	dict set g peerid $::me(id)
+	dict set g psig $psig
+	set ::g_group [ml_dictgroup $g]
+	return
+}
 
-
-###
+proc show_groupform_commit_cmd {} {
+	array set ::groups [list ${::gcard(gid)} $::g_group]
+	array set ::jgroups [list ${::gcard(gid)} $::g_group]
+	array set ::my_groups [list ${::gcard(gid)} [wrap $::g_key]]
+	sc_publishgroup $::g_group	
+	ml_add_srcs ${::gcard(gid)} $::me(id)
+	ml_add_sigreq g ${::gcard(gid)} $::me(contact)
+	set pkey [crypto_parse_priv $::g_key]
+	set req [lindex [array get ::group_to_sigreq "${::gcard(gid)},${::me(id)}"] end]
+	#set sig "$req:[wrap [crypto_sig $req $pkey]]"
+	#array set ::group_to_sig [list "${::gcard(gid)},${::me(id)}" $sig]
+	destroy .gf
+	ml_grouphead $::g_group
+	set ::cur(main,mode) {g}
+	set ::cur(main,group,h) $::g_group 
+	set ::cur(main,group,l) [dict get [ml_groupdict $::g_group] name]
+	ml_showlist g [dict get [ml_groupdict $::g_group] gid]
+	return
 }
 
 proc show_groupform {} {
 	if { [winfo exists .gf] == 1} {
 		return
 	}
-	set commit_cmd {
-		array set ::groups [list ${::gcard(gid)} $::g_group]
-		array set ::jgroups [list ${::gcard(gid)} $::g_group]
-		array set ::my_groups [list ${::gcard(gid)} [wrap $::g_key]]
-		sc_publishgroup $::g_group	
-		ml_add_srcs ${::gcard(gid)} $::me(id)
-		ml_add_sigreq g ${::gcard(gid)} $::me(contact)
-		set pkey [crypto_parse_priv $::g_key]
-		set req [lindex [array get ::group_to_sigreq "${::gcard(gid)},${::me(id)}"] end]
-		#set sig "$req:[wrap [crypto_sig $req $pkey]]"
-		#array set ::group_to_sig [list "${::gcard(gid)},${::me(id)}" $sig]
-		destroy .gf
-		ml_grouphead $::g_group
-		set ::cur(main,mode) {g}
-		set ::cur(main,group,h) $::g_group 
-		set ::cur(main,group,l) [dict get [ml_groupdict $::g_group] name]
-		ml_showlist g [dict get [ml_groupdict $::g_group] gid]
-	}
+	set commit_cmd { show_groupform_commit_cmd }
 	toplevel .gf
 	wm title .gf [::msgcat::mc "groupcreate_t"]
 	pack [panedwindow .gf.p -ori vert] -fill both -expand 1
 	.gf.p add [wframe .gf.b0] -minsize 24 -stretch never
 	pack [wlabel .gf.b0.ml -text [::msgcat::mc "groupcreate_l"] -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side left 
-	pack [wbutton .gf.b0.v -text [::msgcat::mc "commit"]  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command $commit_cmd] -fill both -side right
-	pack [wbutton .gf.b0.g -text [::msgcat::mc "generate"]  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command {generate_group}] -fill both -side right
+	pack [wbutton .gf.b0.v -text [::msgcat::mc "commit"] -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) -command $commit_cmd] -fill both -side right
+	pack [wbutton .gf.b0.g -text [::msgcat::mc "generate"] -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) -command "show_groupform_generate_cmd"] -fill both -side right
 	.gf.p add [wframe .gf.b1] -minsize 24 -stretch never
 	pack [wlabel .gf.b1.lname -text "Name: " -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font)] -fill both -side left 
 	pack [wentry .gf.b1.name -textvariable ::gcard(name) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -selectforeground $::options(basecolor) -selectbackground $::options(hilightcolor) -font $::options(listfont) -width 24 ] -fill both -side right
@@ -921,7 +989,7 @@ proc show_groupform {} {
 	pack [wlabel .gf.b5.lkey -text "Key: " -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side left
 	.gf.p add [wframe .gf.b6]
 	pack [text .gf.b6.key -wrap word -yscrollc {.gf.b6.key_sb set} -height 12 -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(listfont) ] -fill both -expand 1 -side left
-	pack [wscrollbar .gf.b6.key_sb -activebackground $::options(hilightcolor)  -troughcolor $::options(hilightcolor)  -command {.gf.b6.key yview}] -fill y -side right
+	pack [wscrollbar .gf.b6.key_sb -activebackground $::options(hilightcolor) -troughcolor $::options(hilightcolor) -command {.gf.b6.key yview}] -fill y -side right
 	.gf.p add [wframe .gf.b7]
 	pack [wlabel .gf.b7.lpkey -text "Public key: " -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side left
 	.gf.p add [wframe .gf.b8]
@@ -929,34 +997,7 @@ proc show_groupform {} {
 	.gf.p add [wframe .gf.b9]
 	pack [wlabel .gf.b9.lgid -text "GID: " -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side left
 	pack [wlabel .gf.b9.gid -textvariable ::gcard(gid) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(listfont) ] -fill both -side left
-	proc generate_group {} {
-		set key [.gf.b6.key get 1.0 end]
-		set gkey {}
-		catch {
-		set gkey [crypto_parse_priv $key]
-		}
-		if { $gkey == "" } {
-			set gkey [crypto_gen 1024]
-			set key [crypto_exp_priv $gkey]
-		}
-		set gpkey [crypto_exp_pub $gkey]
-		set gid [crypto_cksum -hex $gpkey]
-		set psig [crypto_sig $::me(id) $gkey]
-		set ::g_key $key
-		set ::gcard(pkey) $gpkey
-		set ::gcard(gid) $gid
-		.gf.b6.key delete 1.0 end
-		.gf.b6.key insert end $key
-		set g {}
-		dict set g gid ${::gcard(gid)}
-		dict set g name [lindex [array get ::gcard name] end]
-		dict set g desc [lindex [array get ::gcard desc] end]
-		dict set g pkey ${::gcard(pkey)}
-		dict set g epoch [clock seconds] 
-		dict set g peerid $::me(id)
-		dict set g psig $psig
-		set ::g_group [ml_dictgroup $g]
-	}
+	return
 }
 
 proc show_group_directory_search_cmd {} {
@@ -978,12 +1019,12 @@ proc show_group_directory {} {
 	wm title .gd [::msgcat::mc "groupdir_t"] 
 	pack [panedwindow .gd.p -ori vert ] -fill both -expand 1
 	.gd.p add [wframe ".gd.e"]
-	pack [wbutton .gd.e.c -text [::msgcat::mc "create"]  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command {show_groupform}] -fill both -side left 
+	pack [wbutton .gd.e.c -text [::msgcat::mc "create"] -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) -command {show_groupform}] -fill both -side left 
 	pack [wentry .gd.e.e -textvariable ::groupfield(main) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -selectforeground $::options(basecolor) -selectbackground $::options(hilightcolor) -font $::options(listfont) ] -fill both -side left
-	pack [wbutton .gd.e.s -text [::msgcat::mc "search"]  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command "show_group_directory_search_cmd"] -fill both -side right
-	pack [wbutton .gd.e.o -text [::msgcat::mc "detail"]  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command {show_group_details [lindex $::grouplist(main,k) [lindex [.gd.l.l index active] 0]] ; destroy .gd}] -fill both -side right
+	pack [wbutton .gd.e.s -text [::msgcat::mc "search"] -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) -command "show_group_directory_search_cmd"] -fill both -side right
+	pack [wbutton .gd.e.o -text [::msgcat::mc "detail"] -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) -command {show_group_details [lindex $::grouplist(main,k) [lindex [.gd.l.l index active] 0]] ; destroy .gd}] -fill both -side right
 	.gd.p add [wframe ".gd.l"]
-	pack [wscrollbar .gd.l.y -activebackground $::options(hilightcolor)  -troughcolor $::options(hilightcolor)  -command ".gd.l.l yview"] -fill y -side right
+	pack [wscrollbar .gd.l.y -activebackground $::options(hilightcolor) -troughcolor $::options(hilightcolor) -command ".gd.l.l yview"] -fill y -side right
 	pack [listbox .gd.l.l -listvariable ::grouplist(main,l) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -selectforeground $::options(basecolor) -selectbackground $::options(hilightcolor) -font $::options(listfont) -height 12 -yscrollc ".gd.l.y set"] -fill both -expand 1 -side right
 }
 
@@ -1213,10 +1254,10 @@ proc show_mygroups {} {
 	.mg.p add [wframe ".mg.top"] -stretch never
 	pack [wlabel .mg.top.l -text [::msgcat::mc "mygroups_l"] -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side left
 	.mg.p add [wframe ".mg.l"] -stretch always 
-	pack [wscrollbar .mg.l.y -activebackground $::options(hilightcolor)  -troughcolor $::options(hilightcolor)  -command "tl_yview 1 .mg.l.l"] -fill y -side right
+	pack [wscrollbar .mg.l.y -activebackground $::options(hilightcolor) -troughcolor $::options(hilightcolor) -command "tl_yview 1 .mg.l.l"] -fill y -side right
 	pack [listbox .mg.l.l -listvariable ::mygrouplist(l) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -selectforeground $::options(basecolor) -selectbackground $::options(hilightcolor) -font $::options(font) -height 12 -yscrollc ".mg.l.y set"] -fill both -expand 1 -side right
 	.mg.p add [wframe ".mg.b"] -stretch never
-	pack [wbutton .mg.b.sm -text [::msgcat::mc "Members"] -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font) -command {show_reqmanager g [lindex $::mygrouplist(i) [lindex [.mg.l.l index active] 0]]} ] -fill both -side right
+	pack [wbutton .mg.b.sm -text [::msgcat::mc "Members"] -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) -command {show_reqmanager g [lindex $::mygrouplist(i) [lindex [.mg.l.l index active] 0]]} ] -fill both -side right
 	set ::mygrouplist(l) {}
 	set ::mygrouplist(i) {}
 	set ::mygrouplist(k) {}
@@ -1303,9 +1344,9 @@ proc show_reqmanager {mode id} {
 		$w.p add [wframe "$w.b_$i"]
 		pack [wlabel "$w.b_$i.l" -text "$nickname <$peerid>" -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font) ] -fill both -side left
 		if { $mode == "p" } {
-			pack [wbutton "$w.b_$i.b" -text [::msgcat::mc "add_b"] -command "chat_add $contact ; array unset ::group_to_sigreq $reqk ; after_add $mode $id ; destroy $w.b_$i ; destroy $w"  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font)] -fill both -side right
+			pack [wbutton "$w.b_$i.b" -text [::msgcat::mc "add_b"] -command "chat_add $contact ; array unset ::group_to_sigreq $reqk ; after_add $mode $id ; destroy $w.b_$i ; destroy $w" -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font)] -fill both -side right
 		} elseif { $mode == "g" } {
-			pack [wbutton "$w.b_$i.b" -text [::msgcat::mc "add_g"] -command "rule_add_user $id $peerid ; array unset ::person_to_sigreq $reqk ; after_add $mode $id ; destroy $w.b_$i ; destroy $w"  -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor)  -font $::options(font)] -fill both -side right
+			pack [wbutton "$w.b_$i.b" -text [::msgcat::mc "add_g"] -command "rule_add_user $id $peerid ; array unset ::person_to_sigreq $reqk ; after_add $mode $id ; destroy $w.b_$i ; destroy $w" -activebackground $::options(hilightcolor) -activeforeground $::options(basecolor) -highlightthickness $::options(line_th) -highlightcolor $::options(bordercolor) -highlightbackground $::options(hilightcolor) -font $::options(font)] -fill both -side right
 		}
 		incr i 1
 	}
@@ -3816,22 +3857,22 @@ proc load_dls {} {
 	close $fchan
 }
 
-proc load_keys {} {
-	set path [file join $::filepath "keys"]
-	if {[ file exists $path ] == 0} {
-		return
-	}
-	set line {}
-	set fchan [open $path r]
-	fconfigure $fchan -translation binary
-	while {[gets $fchan line] >= 0} {
-		set pkey [lindex [split $line { }] 0]
-		set pval [lrange [split $line { }] 1 end]
-		log_puts "ALL" "load keys $pkey $pval"
-		array set ::keys [list $pkey $pval]
-	}
-	close $fchan
-}
+#proc load_keys {} {
+#	set path [file join $::filepath "keys"]
+#	if {[ file exists $path ] == 0} {
+#		return
+#	}
+#	set line {}
+#	set fchan [open $path r]
+#	fconfigure $fchan -translation binary
+#	while {[gets $fchan line] >= 0} {
+#		set pkey [lindex [split $line { }] 0]
+#		set pval [lrange [split $line { }] 1 end]
+#		log_puts "ALL" "load keys $pkey $pval"
+#		array set ::keys [list $pkey $pval]
+#	}
+#	close $fchan
+#}
 
 proc write_peers {} {
 	#set path [file join $::filepath "nodes"]
@@ -3998,15 +4039,15 @@ proc write_dls {} {
 	close $fchan
 }
 
-proc write_keys {} {
-	set path [file join $::filepath "keys"]
-	set fchan [open $path w]
-	fconfigure $fchan -translation binary
-	foreach {key val} [array get ::keys] {	
-		puts $fchan "$key $val"
-	}
-	close $fchan
-}
+#proc write_keys {} {
+#	set path [file join $::filepath "keys"]
+#	set fchan [open $path w]
+#	fconfigure $fchan -translation binary
+#	foreach {key val} [array get ::keys] {	
+#		puts $fchan "$key $val"
+#	}
+#	close $fchan
+#}
 
 proc write_sig {} {
 	foreach kind [list person_to_sig person_to_sigreq group_to_sig group_to_sigreq] {
